@@ -5,19 +5,19 @@ import java.util.Arrays;
  */
 public class ArrayStorage {
     Resume[] storage = new Resume[10000];
-    private int size = size();
+    private int size;
 
     void clear() {
         for (int i = 0; i < size; i++) {
             storage[i] = null;
-            size = 0;
         }
+        size = 0;
     }
 
     void save(Resume r) {
-        if (size < 10000) {
+        if (size < storage.length) {
             storage[size] = r;
-            size = size + 1;
+            size++;
         } else {
             System.out.println("There is no place in the storage for a new resume. To save the resume delete any old one you don't need");
         }
@@ -32,24 +32,23 @@ public class ArrayStorage {
     }
 
     void delete(String uuid) {
-        int indexOfResumeToDelete = -1;
+        int index = -1;
         for (int i = 0; i < size; i++) {
-            if (indexOfResumeToDelete < 0) {
+            if (index < 0) {
                 if (storage[i].toString().equals(uuid)) {
-                    indexOfResumeToDelete = i;
-
-                }
-            } else {
-                if (i < size-1) { // Чтобы избежать переполнения массива в строке ниже
-                    storage[i] = storage[i + 1];
+                    index = i;
+                    break;
                 }
             }
         }
-        if (indexOfResumeToDelete < 0) {
+        if (index < 0) {
             System.out.println("There is no resume with uuid = " + uuid);
         } else {
+            if (index < size -1) {
+                storage[index] = storage[size-1];
+            }
             storage[size - 1] = null;
-            size = size -1;
+            size--;
         }
     }
 
@@ -61,10 +60,10 @@ public class ArrayStorage {
     }
 
     int size() {
-        int i = 0;
-        while (storage[i] != null && i < 10000) {
-            i++;
-        }
-        return i;
+//        int i = 0;
+//        while (storage[i] != null && i < 10000) {
+//            i++;
+//        }
+        return size;
     }
 }
