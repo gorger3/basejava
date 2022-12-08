@@ -34,18 +34,16 @@ public class ArrayStorage {
     void delete(String uuid) {
         int index = -1;
         for (int i = 0; i < size; i++) {
-            if (index < 0) {
-                if (storage[i].toString().equals(uuid)) {
-                    index = i;
-                    break;
-                }
+            if (storage[i].toString().equals(uuid)) {
+                index = i;
+                break;
             }
         }
         if (index < 0) {
             System.out.println("There is no resume with uuid = " + uuid);
         } else {
-            if (index < size -1) {
-                storage[index] = storage[size-1];
+            if (index < size - 1) {
+                storage[index] = storage[size - 1];
             }
             storage[size - 1] = null;
             size--;
@@ -60,10 +58,6 @@ public class ArrayStorage {
     }
 
     int size() {
-//        int i = 0;
-//        while (storage[i] != null && i < 10000) {
-//            i++;
-//        }
         return size;
     }
 }
