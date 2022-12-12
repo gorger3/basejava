@@ -8,16 +8,8 @@ import java.util.Arrays;
  * Array based storage for Resumes
  */
 public class ArrayStorage {
-    private Resume[] storage = new Resume[10000];
+    final private Resume[] storage = new Resume[10000];
     private int size;
-
-    private boolean resumeInStorage(String uuid, int i) {
-        if (uuid == storage[i].getUuid()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
 
     public void clear() {
         Arrays.fill(storage, 0, size, null);
@@ -26,22 +18,21 @@ public class ArrayStorage {
 
     public void update(Resume r) {
         String uuid = r.getUuid();
-        for (int i = 0; i < size; i++) {
-            if (resumeInStorage(uuid, i)) {
-                storage[i] = r;
-                return;
-            }
+        int index = getSearchKey(uuid);
+        if (index != -1) {
+            storage[index] = r;
+            return;
+        } else {
+            System.out.println("Error: there is no resume to update in the storage");
         }
-        System.out.println("Error: there is no resume to update in the storage");
     }
 
     public void save(Resume r) {
         String uuid = r.getUuid();
-        for (int i = 0; i < size; i++) {
-            if (resumeInStorage(uuid, i)) {
-                System.out.println("Error: the resume with " + r + " is already in the storage.");
-                return;
-            }
+        int index = getSearchKey(uuid);
+        if (index != -1) {
+            System.out.println("Error: the resume with " + r + " is already in the storage.");
+            return;
         }
         if (size < storage.length) {
             storage[size] = r;
@@ -52,22 +43,22 @@ public class ArrayStorage {
     }
 
     public Resume get(String uuid) {
-        for (int i = 0; i < size; i++) {
-            if (resumeInStorage(uuid, i)) return storage[i];
+        int index = getSearchKey(uuid);
+        if (index != -1) {
+            return storage[index];
+        } else {
+            System.out.println("Error: there is no resume with " + uuid);
+            return null;
         }
-        System.out.println("Error: there is no resume with " + uuid);
-        return null;
     }
 
     public void delete(String uuid) {
-//        int sizeBeforeDelete = size;
-        for (int i = 0; i < size; i++) {
-            if (resumeInStorage(uuid, i)) {
-                storage[i] = storage[size - 1];
-                storage[size - 1] = null;
-                size--;
-                return;
-            }
+        int index = getSearchKey(uuid);
+        if (index != -1) {
+            storage[index] = storage[size - 1];
+            storage[size - 1] = null;
+            size--;
+            return;
         }
         System.out.println("Error: there is no resume with " + uuid);
     }
@@ -81,5 +72,16 @@ public class ArrayStorage {
 
     public int size() {
         return size;
+    }
+
+    private int getSearchKey(String uuid) {
+        int index = -1;
+        for (int i = 0; i < size; i++) {
+            if (uuid == storage[i].getUuid()) {
+                index = i;
+                return index;
+            }
+        }
+        return index;
     }
 }
