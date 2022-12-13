@@ -8,7 +8,8 @@ import java.util.Arrays;
  * Array based storage for Resumes
  */
 public class ArrayStorage {
-    final private Resume[] storage = new Resume[10000];
+    private static final int STORAGE_LIMIT = 10000;
+    Resume[] storage = new Resume[STORAGE_LIMIT];
     private int size;
 
     public void clear() {
@@ -21,7 +22,6 @@ public class ArrayStorage {
         int index = getSearchKey(uuid);
         if (index != -1) {
             storage[index] = r;
-            return;
         } else {
             System.out.println("Error: there is no resume to update in the storage");
         }
@@ -30,15 +30,13 @@ public class ArrayStorage {
     public void save(Resume r) {
         String uuid = r.getUuid();
         int index = getSearchKey(uuid);
-        if (index != -1) {
+        if (size == storage.length) {
+            System.out.println("Error: there is no place in the storage for a new resume.");
+        } else if (index != -1) {
             System.out.println("Error: the resume with " + r + " is already in the storage.");
-            return;
-        }
-        if (size < storage.length) {
+        } else {
             storage[size] = r;
             size++;
-        } else {
-            System.out.println("Error: there is no place in the storage for a new resume.");
         }
     }
 
@@ -77,7 +75,7 @@ public class ArrayStorage {
     private int getSearchKey(String uuid) {
         int index = -1;
         for (int i = 0; i < size; i++) {
-            if (uuid == storage[i].getUuid()) {
+            if (uuid.equals(storage[i].getUuid())) {
                 index = i;
                 return index;
             }
