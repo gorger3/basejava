@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class AbstractArrayStorageTest {
+public abstract class AbstractArrayStorageTest {
 
     private final Storage storage;
     private final static String UUID_1 = "uuid1";
@@ -39,7 +39,7 @@ public class AbstractArrayStorageTest {
     @Test
     public void clear() {
         storage.clear();
-        assertTrue(assertSize(0));
+        assertSize(0);
         assertArrayEquals(new Resume[0], storage.getAll());
     }
 
@@ -58,8 +58,8 @@ public class AbstractArrayStorageTest {
     @Test
     public void save() {
         storage.save(RESUME_4);
-        assertTrue(assertGet(RESUME_4));
-        assertTrue(assertSize(4));
+        assertGet(RESUME_4);
+        assertSize(4);
     }
 
     @Test(expected = ExistStorageException.class)
@@ -83,9 +83,9 @@ public class AbstractArrayStorageTest {
 
     @Test
     public void get() {
-        assertTrue(assertGet(RESUME_1));
-        assertTrue(assertGet(RESUME_2));
-        assertTrue(assertGet(RESUME_3));
+        assertGet(RESUME_1);
+        assertGet(RESUME_2);
+        assertGet(RESUME_3);
     }
 
     @Test(expected = NotExistStorageException.class)
@@ -96,8 +96,8 @@ public class AbstractArrayStorageTest {
     @Test(expected = NotExistStorageException.class)
     public void delete() {
         storage.delete(UUID_2);
-        assertTrue(assertSize(2));
-        assertTrue(assertGet(RESUME_2));
+        assertSize(2);
+        assertGet(RESUME_2);
     }
 
     @Test(expected = NotExistStorageException.class)
@@ -107,28 +107,20 @@ public class AbstractArrayStorageTest {
 
     @Test
     public void getAll() {
-        assertTrue(assertSize(storage.getAll().length));
+        assertSize(storage.getAll().length);
     }
 
     @Test
     public void size() {
-        assertTrue(assertSize(3));
+        assertSize(3);
     }
 
-    private boolean assertSize(int expectedSize) {
-        if (expectedSize == storage.size()) {
-            return true;
-        } else {
-            return false;
-        }
+    private void assertSize(int expectedSize) {
+        assertEquals(expectedSize, storage.size());
     }
 
-    private boolean assertGet(Resume r) {
-        if (r.equals(storage.get(r.getUuid()))) {
-            return true;
-        } else {
-            return false;
-        }
+    private void assertGet(Resume r) {
+        assertEquals(r, storage.get(r.getUuid()));
     }
 
 }
