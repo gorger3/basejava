@@ -9,9 +9,16 @@ import java.util.Arrays;
  * Array based storage for Resumes
  */
 public abstract class AbstractArrayStorage extends AbstractStorage {
+
     protected static final int STORAGE_LIMIT = 10000;
 
     protected Resume[] storage = new Resume[STORAGE_LIMIT];
+
+    protected int size = 0;
+
+    public int size() {
+        return size;
+    }
 
     public void clear() {
         Arrays.fill(storage, 0, size, null);
@@ -51,10 +58,12 @@ public abstract class AbstractArrayStorage extends AbstractStorage {
         return storage[(Integer) searchKey];
     }
 
+    protected abstract void insertElement(Resume r, int index);
+
     protected abstract void fillDeletedElement(int index);
 
     @Override
-    protected boolean isExist(String uuid) {
-        return (Integer) getSearchKey(uuid) >= 0;
+    protected boolean isExist(Object searchKey) {
+        return (Integer) searchKey >= 0;
     }
 }
