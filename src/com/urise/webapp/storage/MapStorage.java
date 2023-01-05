@@ -7,17 +7,14 @@ import java.util.Map;
 
 public class MapStorage extends AbstractStorage {
 
-    protected int size = 0;
+    private final Map<String, Resume> storage = new HashMap<>();
 
     public int size() {
-        return size;
+        return storage.size();
     }
-
-    Map<String, Resume> storage = new HashMap<>();
 
     public void clear() {
         storage.clear();
-        size = 0;
     }
 
     @Override
@@ -28,18 +25,16 @@ public class MapStorage extends AbstractStorage {
     @Override
     public void doSave(Object searchKey, Resume r) {
         storage.put((String) searchKey, r);
-        size++;
     }
 
     @Override
     public Resume doGet(Object searchKey) {
-        return storage.get(searchKey);
+        return storage.get((String) searchKey);
     }
 
     @Override
     public void doDelete(Object searchKey) {
-        storage.remove(searchKey);
-        size--;
+        storage.remove((String) searchKey);
     }
 
 
@@ -54,6 +49,6 @@ public class MapStorage extends AbstractStorage {
 
     @Override
     protected boolean isExist(Object searchKey) {
-        return storage.containsKey(searchKey);
+        return storage.containsKey((String) searchKey);
     }
 }
