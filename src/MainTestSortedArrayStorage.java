@@ -9,7 +9,7 @@ public class MainTestSortedArrayStorage {
 
     public static void main(String[] args) {
         Resume r1 = new Resume("uuid1");
-        Resume r2 = new Resume("uuid12");
+        Resume r2 = new Resume("uuid2");
         Resume r3 = new Resume("uuid3");
 
         SORTED_ARRAY_STORAGE.save(r1);
@@ -32,7 +32,7 @@ public class MainTestSortedArrayStorage {
 
     static void printAll() {
         System.out.println("\nGet All");
-        for (Resume r : SORTED_ARRAY_STORAGE.getAll()) {
+        for (Resume r : SORTED_ARRAY_STORAGE.getAllSorted()) {
             System.out.println(r);
         }
     }

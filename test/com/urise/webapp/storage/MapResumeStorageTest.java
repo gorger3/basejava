@@ -10,35 +10,7 @@ import java.util.ArrayList;
 
 import static org.junit.Assert.*;
 
-public abstract class AbstractStorageTest {
-
-    protected final Storage storage;
-
-    private final static String UUID_1 = "uuid1";
-    private final static String UUID_2 = "uuid2";
-    private final static String UUID_3 = "uuid3";
-    private final static String UUID_4 = "uuid4";
-    private final static String FULL_NAME_1 = "John";
-
-    private final static String FULL_NAME_2 = "Alice";
-    private final static String FULL_NAME_3 = "John";
-    private final static String FULL_NAME_4 = "Bob";
-    private final static String UUID_NOT_EXIST = "dummy";
-
-    private final static Resume RESUME_1;
-    private final static Resume RESUME_2;
-    private final static Resume RESUME_3;
-    private final static Resume RESUME_4;
-    static {
-        RESUME_1 = new Resume(UUID_1, FULL_NAME_1);
-        RESUME_2 = new Resume(UUID_2, FULL_NAME_2);
-        RESUME_3 = new Resume(UUID_3, FULL_NAME_3);
-        RESUME_4 = new Resume(UUID_4, FULL_NAME_4);
-    }
-
-    public AbstractStorageTest(Storage storage) {
-        this.storage = storage;
-    }
+public class MapResumeStorageTest {
 
     @Before
     public void setUp() {
@@ -46,6 +18,34 @@ public abstract class AbstractStorageTest {
         storage.save(RESUME_1);
         storage.save(RESUME_2);
         storage.save(RESUME_3);
+    }
+
+    protected final Storage storage;
+    private final static String UUID_1 = "uuid1";
+    private final static String UUID_2 = "uuid2";
+    private final static String UUID_3 = "uuid3";
+    private final static String UUID_4 = "uuid4";
+
+    private final static String FULL_NAME_1 = "John";
+    private final static String FULL_NAME_2 = "Alice";
+    private final static String FULL_NAME_3 = "John";
+    private final static String FULL_NAME_4 = "Bob";
+
+    private final static String UUID_NOT_EXIST = "dummy";
+    private final static Resume RESUME_1;
+    private final static Resume RESUME_2;
+    private final static Resume RESUME_3;
+    private final static Resume RESUME_4;
+
+    static {
+        RESUME_1 = new Resume(UUID_1, FULL_NAME_1);
+        RESUME_2 = new Resume(UUID_2, FULL_NAME_2);
+        RESUME_3 = new Resume(UUID_3, FULL_NAME_3);
+        RESUME_4 = new Resume(UUID_4, FULL_NAME_4);
+    }
+
+    public MapResumeStorageTest() {
+        this.storage = new MapResumeStorage();
     }
 
     @Test
@@ -118,6 +118,6 @@ public abstract class AbstractStorageTest {
     }
 
     private void assertGet(Resume r) {
-        assertEquals(r, storage.get(r.getUuid()));
+        assertEquals(r, storage.get(r);
     }
 }

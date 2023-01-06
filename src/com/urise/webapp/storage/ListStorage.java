@@ -7,48 +7,53 @@ import java.util.List;
 
 public class ListStorage extends AbstractStorage {
 
-    private final List<Resume> storage = new ArrayList<>();
-
-    public int size() {
-        return storage.size();
-    }
-
-    public void clear() {
-        storage.clear();
-    }
+    private final List<Resume> list = new ArrayList<>();
 
     @Override
-    public void doUpdate(Object searchKey, Resume r) {
-        storage.set((Integer) searchKey, r);
-    }
-
-    @Override
-    public void doSave(Object searchKey, Resume r) {
-        storage.add(r);
-    }
-
-    @Override
-    public Resume doGet(Object searchKey) {
-        return storage.get((Integer) searchKey);
-    }
-
-    @Override
-    public void doDelete(Object searchKey) {
-        storage.remove((int) searchKey);
-    }
-
-    public Resume[] getAll() {
-        return storage.toArray(new Resume[0]);
-    }
-
-    @Override
-    protected Object getSearchKey(String uuid) {
-        Resume resumeToFind = new Resume(uuid);
-        return storage.indexOf(resumeToFind);
+    protected Integer getSearchKey(Object o) {
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).getUuid().equals(o)) {
+                return i;
+            }
+        }
+        return null;
     }
 
     @Override
     protected boolean isExist(Object searchKey) {
-        return (Integer) searchKey >= 0;
+        return searchKey != null;
+    }
+
+    public int size() {
+        return list.size();
+    }
+
+    public void clear() {
+        list.clear();
+    }
+
+    @Override
+    public void doUpdate(Object searchKey, Resume r) {
+        list.set((Integer) searchKey, r);
+    }
+
+    @Override
+    public void doSave(Object searchKey, Resume r) {
+        list.add(r);
+    }
+
+    @Override
+    public Resume doGet(Object searchKey) {
+        return list.get((Integer) searchKey);
+    }
+
+    @Override
+    public void doDelete(Object searchKey) {
+        list.remove(((Integer) searchKey).intValue());
+    }
+
+    public List<Resume> getAllSorted() {
+        list.sort(RESUME_COMPARATOR);
+        return list;
     }
 }
