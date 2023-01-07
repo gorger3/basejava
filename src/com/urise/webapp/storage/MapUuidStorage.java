@@ -12,8 +12,8 @@ public class MapUuidStorage extends AbstractStorage {
     private final Map<String, Resume> map = new HashMap<>();
 
     @Override
-    protected Object getSearchKey(Object o) {
-        return o;
+    protected Object getSearchKey(String uuid) {
+        return uuid;
     }
 
     public int size() {
@@ -45,7 +45,8 @@ public class MapUuidStorage extends AbstractStorage {
     }
 
 
-    public List<Resume> getAllSorted() {
+    @Override
+    public List<Resume> doCopyAll() {
         List<Resume> list = new ArrayList<>(map.values());
         list.sort(RESUME_COMPARATOR);
         return list;
