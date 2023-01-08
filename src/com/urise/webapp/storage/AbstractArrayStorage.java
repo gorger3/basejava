@@ -35,9 +35,7 @@ public abstract class AbstractArrayStorage extends AbstractStorage {
      */
     @Override
     public List<Resume> doCopyAll() {
-        List<Resume> list = Arrays.asList(Arrays.copyOfRange(storage, 0, size));
-        list.sort(RESUME_COMPARATOR);
-        return list;
+        return Arrays.asList(Arrays.copyOfRange(storage, 0, size));
     }
 
     @Override

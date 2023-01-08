@@ -2,10 +2,7 @@ package com.urise.webapp.storage;
 
 import com.urise.webapp.model.Resume;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MapUuidStorage extends AbstractStorage {
 
@@ -47,9 +44,7 @@ public class MapUuidStorage extends AbstractStorage {
 
     @Override
     public List<Resume> doCopyAll() {
-        List<Resume> list = new ArrayList<>(map.values());
-        list.sort(RESUME_COMPARATOR);
-        return list;
+        return new ArrayList<>(map.values());
     }
 
     @Override
