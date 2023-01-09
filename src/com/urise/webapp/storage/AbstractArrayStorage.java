@@ -10,11 +10,9 @@ import java.util.List;
  * Array based storage for Resumes
  */
 public abstract class AbstractArrayStorage extends AbstractStorage {
-
     protected static final int STORAGE_LIMIT = 10000;
 
     protected Resume[] storage = new Resume[STORAGE_LIMIT];
-
     protected int size = 0;
 
     public int size() {
@@ -26,49 +24,45 @@ public abstract class AbstractArrayStorage extends AbstractStorage {
         size = 0;
     }
 
-    public void doUpdate(Object searchKey, Resume r) {
-        storage[(Integer) searchKey] = r;
+    @Override
+    protected void doUpdate(Resume r, Object index) {
+        storage[(Integer) index] = r;
     }
 
-    /**
-     * @return array, contains only Resumes in storage (without null)
-     */
     @Override
     public List<Resume> doCopyAll() {
         return Arrays.asList(Arrays.copyOfRange(storage, 0, size));
     }
 
     @Override
-    public void doSave(Object searchKey, Resume r) {
+    protected void doSave(Resume r, Object index) {
         if (size == STORAGE_LIMIT) {
             throw new StorageException("Storage overflow", r.getUuid());
         } else {
-            insertElement(r, (Integer) searchKey);
+            insertElement(r, (Integer) index);
             size++;
         }
     }
 
     @Override
-    public void doDelete(Object searchKey) {
-        fillDeletedElement((Integer) searchKey);
+    public void doDelete(Object index) {
+        fillDeletedElement((Integer) index);
         storage[size - 1] = null;
         size--;
     }
 
-    @Override
-    public Resume doGet(Object searchKey) {
-        return storage[(Integer) searchKey];
+    public Resume doGet(Object index) {
+        return storage[(Integer) index];
     }
 
-    protected abstract void insertElement(Resume r, int index);
+    @Override
+    protected boolean isExist(Object index) {
+        return (Integer) index >= 0;
+    }
 
     protected abstract void fillDeletedElement(int index);
 
-    @Override
-    protected boolean isExist(Object searchKey) {
-        return (Integer) searchKey >= 0;
-    }
+    protected abstract void insertElement(Resume r, int index);
 
-    @Override
-    protected abstract Object getSearchKey(String uuid);
+    protected abstract Integer getSearchKey(String uuid);
 }

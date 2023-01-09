@@ -6,11 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ListStorage extends AbstractStorage {
-
-    private final List<Resume> list = new ArrayList<>();
+    private List<Resume> list = new ArrayList<>();
 
     @Override
-    protected Object getSearchKey(String uuid) {
+    protected Integer getSearchKey(String uuid) {
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).getUuid().equals(uuid)) {
                 return i;
@@ -24,36 +23,39 @@ public class ListStorage extends AbstractStorage {
         return searchKey != null;
     }
 
-    public int size() {
-        return list.size();
+    @Override
+    protected void doUpdate(Resume r, Object searchKey) {
+        list.set((Integer) searchKey, r);
     }
 
+    @Override
+    protected void doSave(Resume r, Object searchKey) {
+        list.add(r);
+    }
+
+    @Override
+    protected Resume doGet(Object searchKey) {
+        return list.get((Integer) searchKey);
+    }
+
+    @Override
+    protected void doDelete(Object searchKey) {
+        list.remove(((Integer) searchKey).intValue());
+    }
+
+    @Override
     public void clear() {
         list.clear();
     }
 
     @Override
-    public void doUpdate(Object searchKey, Resume r) {
-        list.set((Integer) searchKey, r);
-    }
-
-    @Override
-    public void doSave(Object searchKey, Resume r) {
-        list.add(r);
-    }
-
-    @Override
-    public Resume doGet(Object searchKey) {
-        return list.get((Integer) searchKey);
-    }
-
-    @Override
-    public void doDelete(Object searchKey) {
-        list.remove(((Integer) searchKey).intValue());
-    }
-
-    @Override
     public List<Resume> doCopyAll() {
-        return list;
+        return new ArrayList<>(list);
+    }
+
+    @Override
+    public int size() {
+        return list.size();
     }
 }
+
