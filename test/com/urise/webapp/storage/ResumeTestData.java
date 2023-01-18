@@ -247,7 +247,7 @@ public class ResumeTestData {
         // вывод на консоль всех секций
         for (SectionType type : SectionType.values()) {
             Object content = resume.getSection(type).toString();
-            System.out.println(type.getType());
+            System.out.println(type.getTitle());
             System.out.println(content);
         }
     }
