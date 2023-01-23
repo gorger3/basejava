@@ -3,25 +3,17 @@ package com.urise.webapp.model;
 import java.util.List;
 import java.util.Objects;
 
-public class OrganizationSection extends AbstractSection {
+public class OrganizationSection extends Section {
 
-    private final List<Organization> content;
+    private final List<Organization> organizations;
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("");
-        for (int i = 0; i < content.size(); i++) {
-            sb.append(content.get(i) + "\n");
-        }
-        return sb.toString();
+    public OrganizationSection(List<Organization> organizations) {
+        Objects.requireNonNull(organizations, "organizations must not be null");
+        this.organizations = organizations;
     }
 
-    public List<Organization> getContent() {
-        return content;
-    }
-
-    public OrganizationSection(List<Organization> content) {
-        this.content = content;
+    public List<Organization> getOrganizations() {
+        return organizations;
     }
 
     @Override
@@ -29,11 +21,16 @@ public class OrganizationSection extends AbstractSection {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         OrganizationSection that = (OrganizationSection) o;
-        return Objects.equals(content, that.content);
+        return Objects.equals(organizations, that.organizations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(content);
+        return Objects.hash(organizations);
+    }
+
+    @Override
+    public String toString() {
+        return organizations.toString();
     }
 }

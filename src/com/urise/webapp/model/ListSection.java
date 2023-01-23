@@ -3,25 +3,17 @@ package com.urise.webapp.model;
 import java.util.List;
 import java.util.Objects;
 
-public class ListSection extends AbstractSection {
+public class ListSection extends Section {
 
-    private final List<String> content;
+    private final List<String> items;
 
-    public List<String> getContent() {
-        return content;
+    public ListSection(List<String> items) {
+        Objects.requireNonNull(items, "items must not be null");
+        this.items = items;
     }
 
-    public ListSection(List<String> content) {
-        this.content = content;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("");
-        for (int i = 0; i < content.size(); i++) {
-            sb.append(content.get(i) + "\n");
-        }
-        return sb.toString();
+    public List<String> getItems() {
+        return items;
     }
 
     @Override
@@ -29,11 +21,20 @@ public class ListSection extends AbstractSection {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ListSection that = (ListSection) o;
-        return content.equals(that.content);
+        return items.equals(that.items);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(content);
+        return Objects.hash(items);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("");
+        for (int i = 0; i < items.size(); i++) {
+            sb.append(items.get(i) + "\n");
+        }
+        return sb.toString();
     }
 }
