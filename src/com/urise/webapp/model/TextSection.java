@@ -2,11 +2,12 @@ package com.urise.webapp.model;
 
 import java.util.Objects;
 
-public class TextSection extends AbstractSection{
+public class TextSection extends Section {
 
     private final String content;
 
     public TextSection(String content) {
+        Objects.requireNonNull(content, "content must not be null");
         this.content = content;
     }
 
@@ -23,12 +24,12 @@ public class TextSection extends AbstractSection{
     }
 
     @Override
-    public String toString() {
-        return content;
+    public int hashCode() {
+        return Objects.hash(content);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(content);
+    public String toString() {
+        return content;
     }
 }
