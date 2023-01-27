@@ -210,8 +210,26 @@ public class ResumeTestData {
 
     public static void main(String[] args) {
 
-        Resume resume = new Resume("Григорий Кислин");
+        Resume resume = createTestResume("uuid1", "Григорий Кислин");
 
+        System.out.println(resume);
+
+        // вывод контактов на консоль
+//        for (ContactType type : ContactType.values()) {
+//            String str = resume.getContact(type);
+//            System.out.println(type.getType() + str);
+//        }
+
+        // вывод всех секций на консоль
+//        for (SectionType type : SectionType.values()) {
+//            Object content = resume.getSection(type).toString();
+//            System.out.println(type.getTitle());
+//            System.out.println(content);
+//        }
+    }
+
+    public static Resume createTestResume(String uuid, String fullName) {
+        Resume resume = new Resume(uuid, fullName);
         // добавление контактов в резюме
         int i = 0;
         for (ContactType type : ContactType.values()) {
@@ -227,7 +245,7 @@ public class ResumeTestData {
         Section experienceSection = new OrganizationSection(EXPERIENCE_LIST);
         Section educationSection = new OrganizationSection(EDUCATION_LIST);
 
-        // созадание списка секциий 
+        // созадание списка секций
         List<Section> sectionList = Arrays.asList(
                 objectiveSection, personalSection,
                 achievementSection, qualificationSection,
@@ -240,23 +258,6 @@ public class ResumeTestData {
             j++;
         }
 
-
-        System.out.println(resume);
-
-        // вывод имени соискателю на консоль
-        //        System.out.println(resume.getFullName());
-
-// вывод контактов на консоль
-//        for (ContactType type : ContactType.values()) {
-//            String str = resume.getContact(type);
-//            System.out.println(type.getType() + str);
-//        }
-
-        // вывод всех секций на консоль
-//        for (SectionType type : SectionType.values()) {
-//            Object content = resume.getSection(type).toString();
-//            System.out.println(type.getTitle());
-//            System.out.println(content);
-//        }
+        return resume;
     }
 }
