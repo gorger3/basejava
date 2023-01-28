@@ -14,7 +14,7 @@ import java.util.Objects;
  * 22.07.2016
  */
 public abstract class AbstractFileStorage extends AbstractStorage<File> {
-    private File directory;
+    private final File directory;
 
     protected AbstractFileStorage(File directory) {
         Objects.requireNonNull(directory, "directory must not be null");
@@ -29,13 +29,19 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
 
     @Override
     public void clear() {
+        if (directory.listFiles() == null) {
+            throw new StorageException("Failed to get list of files from ", directory.getName());
+        }
         for (File file : directory.listFiles()) {
-            file.delete();
+            doDelete(file);
         }
     }
 
     @Override
     public int size() {
+        if (directory.listFiles() == null) {
+            throw new StorageException("Failed to get list of files from ", directory.getName());
+        }
         return directory.listFiles().length;
     }
 
@@ -68,8 +74,6 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
         }
     }
 
-    protected abstract void doWrite(Resume r, File file) throws IOException;
-
     @Override
     protected Resume doGet(File file) {
         try {
@@ -79,15 +83,20 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
         }
     }
 
-    protected abstract Resume doRead(File file) throws IOException;
-
     @Override
     protected void doDelete(File file) {
-        file.delete();
+        try {
+            file.delete();
+        } catch (Exception e) {
+            throw new StorageException("Error while deleting ", file.getName(), e);
+        }
     }
 
     @Override
     protected List<Resume> doCopyAll() {
+        if (directory.listFiles() == null) {
+            throw new StorageException("Failed to get list of files from ", directory.getName());
+        }
         List<Resume> list = new ArrayList<>();
         for (File file : directory.listFiles()) {
             Resume r = doGet(file);
@@ -95,4 +104,8 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
         }
         return list;
     }
+
+    protected abstract Resume doRead(File file) throws IOException;
+
+    protected abstract void doWrite(Resume r, File file) throws IOException;
 }
