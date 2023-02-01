@@ -88,9 +88,12 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
     @Override
     protected void doDelete(File file) {
         try {
-            file.delete();
-        } catch (Exception e) {
-            throw new StorageException("Error while deleting ", file.getName(), e);
+            boolean deleted = file.delete();
+            if (!deleted) {
+                throw new StorageException("Failed to delete ", file.getName());
+            }
+        } catch (SecurityException e) {
+            throw new StorageException("Not enough rights to delete ", file.getName(), e);
         }
     }
 
