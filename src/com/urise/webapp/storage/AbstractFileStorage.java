@@ -40,11 +40,11 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
 
     @Override
     public int size() {
-        File[] files = directory.listFiles();
-        if (files == null) {
-            throw new StorageException("I/O error ", directory.getName());
+        String[] list = directory.list();
+        if (list == null) {
+            throw new StorageException("Directory read error ", directory.getName()); //Григорий вместо имени null передал
         }
-        return files.length;
+        return list.length;
     }
 
     @Override
@@ -57,7 +57,7 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
         try {
             doWrite(r, file);
         } catch (IOException e) {
-            throw new StorageException("IO error", file.getName(), e);
+            throw new StorageException("File write error ", r.getUuid(), e);
         }
     }
 
@@ -70,10 +70,10 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
     protected void doSave(Resume r, File file) {
         try {
             file.createNewFile();
-            doWrite(r, file);
         } catch (IOException e) {
-            throw new StorageException("IO error", file.getName(), e);
+            throw new StorageException("Couldn't create file " + file.getAbsolutePath(), file.getName(), e);
         }
+        doUpdate(r, file);
     }
 
     @Override
@@ -81,7 +81,7 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
         try {
             return doRead(file);
         } catch (IOException e) {
-            throw new StorageException("IO error", file.getName(), e);
+            throw new StorageException("File read error", file.getName(), e);
         }
     }
 
@@ -90,7 +90,7 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
         try {
             boolean deleted = file.delete();
             if (!deleted) {
-                throw new StorageException("Failed to delete ", file.getName());
+                throw new StorageException("File delete error ", file.getName());
             }
         } catch (SecurityException e) {
             throw new StorageException("Not enough rights to delete ", file.getName(), e);
@@ -101,7 +101,7 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
     protected List<Resume> doCopyAll() {
         File[] files = directory.listFiles();
         if (files == null) {
-            throw new StorageException("I/O error ", directory.getName());
+            throw new StorageException("Directory read error ", directory.getName());
         }
         List<Resume> list = new ArrayList<>();
         for (File file : files) {

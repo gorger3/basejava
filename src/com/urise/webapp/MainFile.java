@@ -46,20 +46,21 @@ public class MainFile {
         String srcPath = "C:\\Users\\GGorelik\\Documents\\java-study\\javaops\\basejava\\src";
         File rootDir = new File(srcPath);
         List<File> listOfFiles = new ArrayList<>();
-        System.out.println("----------------- oldWalkThroughDirectory ------------------------ ");
-        System.out.println(simpleWalkThroughDirectory(rootDir, listOfFiles));
+        System.out.println("----------------- printDirectoryDeeply ------------------------ ");
+        System.out.println(printDirectoryDeeply(rootDir, listOfFiles));
         System.out.println("----------------- walkThroughDirectoryWithIndentation ------------------------ ");
         walkThroughDirectoryWithIndentation(rootDir.toPath());
     }
 
     // метод для глубокого обхода папки: возвращает все файлы в папке
-    public static List<File> simpleWalkThroughDirectory(File rootDir, List<File> list) {
+    public static List<File> printDirectoryDeeply(File rootDir, List<File> list) {
         File[] files = rootDir.listFiles();
         for (File file : files) {
-            if (file.isDirectory()) {
-                simpleWalkThroughDirectory(file, list);
+            if (file.isFile()) {
+                System.out.println("File: " + file.getName());;
             } else {
-                list.add(file);
+                System.out.println("Directory: " + file.getName());
+                printDirectoryDeeply(file, list);
             }
         }
         return list;
@@ -80,7 +81,7 @@ public class MainFile {
         public FileVisitResult preVisitDirectory(Object dir, BasicFileAttributes attrs) throws IOException {
             Objects.requireNonNull(dir);
             Objects.requireNonNull(attrs);
-            System.out.println(dir);
+            System.out.println("Directory: " + ((Path) dir).getFileName());
             return FileVisitResult.CONTINUE;
         }
 
