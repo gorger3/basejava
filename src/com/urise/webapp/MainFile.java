@@ -3,8 +3,14 @@ package com.urise.webapp;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * gkislin
@@ -12,8 +18,8 @@ import java.util.List;
  */
 public class MainFile {
     public static void main(String[] args) {
-        String filePath = ".\\.gitignore";
 
+        String filePath = ".\\.gitignore";
         File file = new File(filePath);
         try {
             System.out.println(file.getCanonicalPath());
@@ -40,20 +46,51 @@ public class MainFile {
         String srcPath = "C:\\Users\\GGorelik\\Documents\\java-study\\javaops\\basejava\\src";
         File rootDir = new File(srcPath);
         List<File> listOfFiles = new ArrayList<>();
-//        getFilesInDirectory(srcPath, listOfFiles);
-        System.out.println("args = " + getFilesInDirectory(rootDir, listOfFiles));
-
+        System.out.println("----------------- oldWalkThroughDirectory ------------------------ ");
+        System.out.println(simpleWalkThroughDirectory(rootDir, listOfFiles));
+        System.out.println("----------------- walkThroughDirectoryWithIndentation ------------------------ ");
+        walkThroughDirectoryWithIndentation(rootDir.toPath());
     }
-    // метод для обхода папки: возвращает все файлы в папке
-    public static List<File> getFilesInDirectory(File rootDir, List<File> list) {
+
+    // метод для глубокого обхода папки: возвращает все файлы в папке
+    public static List<File> simpleWalkThroughDirectory(File rootDir, List<File> list) {
         File[] files = rootDir.listFiles();
         for (File file : files) {
             if (file.isDirectory()) {
-                getFilesInDirectory(file, list);
+                simpleWalkThroughDirectory(file, list);
             } else {
                 list.add(file);
             }
         }
         return list;
+    }
+
+    // метод для глубокого обхода папки с использованием NIO
+    public static void walkThroughDirectoryWithIndentation(Path rootDir) {
+        try {
+            Files.walkFileTree(rootDir, new MyFileVisitor());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static class MyFileVisitor extends SimpleFileVisitor {
+
+        @Override
+        public FileVisitResult preVisitDirectory(Object dir, BasicFileAttributes attrs) throws IOException {
+            Objects.requireNonNull(dir);
+            Objects.requireNonNull(attrs);
+            System.out.println(dir);
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFile(Object file, BasicFileAttributes attrs)
+                throws IOException {
+            Objects.requireNonNull(file);
+            Objects.requireNonNull(attrs);
+            System.out.println("  " + ((Path) file).getFileName());
+            return FileVisitResult.CONTINUE;
+        }
     }
 }
