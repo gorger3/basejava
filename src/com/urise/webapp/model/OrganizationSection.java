@@ -1,11 +1,22 @@
 package com.urise.webapp.model;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * gkislin
+ * 19.07.2016
+ */
 public class OrganizationSection extends Section {
 
+    private static final long serialVersionUID = 1L;
+
     private final List<Organization> organizations;
+
+    public OrganizationSection(Organization... organizations) {
+        this(Arrays.asList(organizations));
+    }
 
     public OrganizationSection(List<Organization> organizations) {
         Objects.requireNonNull(organizations, "organizations must not be null");
@@ -20,13 +31,16 @@ public class OrganizationSection extends Section {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         OrganizationSection that = (OrganizationSection) o;
-        return Objects.equals(organizations, that.organizations);
+
+        return organizations.equals(that.organizations);
+
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(organizations);
+        return organizations.hashCode();
     }
 
     @Override

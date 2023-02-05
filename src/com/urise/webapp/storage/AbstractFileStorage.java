@@ -3,8 +3,7 @@ package com.urise.webapp.storage;
 import com.urise.webapp.exception.StorageException;
 import com.urise.webapp.model.Resume;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -13,8 +12,18 @@ import java.util.Objects;
  * gkislin
  * 22.07.2016
  */
-public abstract class AbstractFileStorage extends AbstractStorage<File> {
+public class AbstractFileStorage extends AbstractStorage<File>{
+
     private final File directory;
+    private static final SerializationStrategy strategy = new ObjectStreamStorage();
+
+    protected void doWrite(Resume r, OutputStream os) {
+        strategy.write(r, os);
+    }
+
+    protected Resume doRead(InputStream is) {
+        return strategy.read(is);
+    }
 
     protected AbstractFileStorage(File directory) {
         Objects.requireNonNull(directory, "directory must not be null");
@@ -30,11 +39,10 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
     @Override
     public void clear() {
         File[] files = directory.listFiles();
-        if (files == null) {
-            throw new StorageException("I/O error", directory.getName());
-        }
-        for (File file : files) {
-            doDelete(file);
+        if (files != null) {
+            for (File file : files) {
+                doDelete(file);
+            }
         }
     }
 
@@ -42,7 +50,7 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
     public int size() {
         String[] list = directory.list();
         if (list == null) {
-            throw new StorageException("Directory read error ", directory.getName()); //Григорий вместо имени null передал
+            throw new StorageException("Directory read error", null);
         }
         return list.length;
     }
@@ -55,9 +63,9 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
     @Override
     protected void doUpdate(Resume r, File file) {
         try {
-            doWrite(r, file);
+            doWrite(r, new BufferedOutputStream(new FileOutputStream(file)));
         } catch (IOException e) {
-            throw new StorageException("File write error ", r.getUuid(), e);
+            throw new StorageException("File write error", r.getUuid(), e);
         }
     }
 
@@ -79,7 +87,7 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
     @Override
     protected Resume doGet(File file) {
         try {
-            return doRead(file);
+            return doRead(new BufferedInputStream(new FileInputStream(file)));
         } catch (IOException e) {
             throw new StorageException("File read error", file.getName(), e);
         }
@@ -87,13 +95,8 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
 
     @Override
     protected void doDelete(File file) {
-        try {
-            boolean deleted = file.delete();
-            if (!deleted) {
-                throw new StorageException("File delete error ", file.getName());
-            }
-        } catch (SecurityException e) {
-            throw new StorageException("Not enough rights to delete ", file.getName(), e);
+        if (!file.delete()) {
+            throw new StorageException("File delete error", file.getName());
         }
     }
 
@@ -101,17 +104,12 @@ public abstract class AbstractFileStorage extends AbstractStorage<File> {
     protected List<Resume> doCopyAll() {
         File[] files = directory.listFiles();
         if (files == null) {
-            throw new StorageException("Directory read error ", directory.getName());
+            throw new StorageException("Directory read error", null);
         }
-        List<Resume> list = new ArrayList<>();
+        List<Resume> list = new ArrayList<>(files.length);
         for (File file : files) {
-            Resume r = doGet(file);
-            list.add(r);
+            list.add(doGet(file));
         }
         return list;
     }
-
-    protected abstract Resume doRead(File file) throws IOException;
-
-    protected abstract void doWrite(Resume r, File file) throws IOException;
 }

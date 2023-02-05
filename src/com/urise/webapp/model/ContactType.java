@@ -1,7 +1,7 @@
 package com.urise.webapp.model;
 
 public enum ContactType {
-    TEL("Тел: "),
+    PHONE("Тел: "),
     SKYPE("Skype: "),
     MAIL("Почта: "),
     LINKEDIN("Профиль "),
