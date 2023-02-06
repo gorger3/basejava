@@ -18,7 +18,7 @@ public abstract class AbstractStorageTest {
     protected static final File STORAGE_DIR = new File(
             "C:\\Users\\GGorelik\\Documents\\java-study\\javaops\\basejava\\storage");
 
-//    private static final SerializationStrategy STRATEGY_1 = new ObjectStreamStorage();
+//    private static final SerializationStrategy STRATEGY_1 = new StreamStrategy();
 //    protected static final List<SerializationStrategy> strategies = Arrays.asList(STRATEGY_1);
 
     protected Storage storage;

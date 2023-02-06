@@ -7,7 +7,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -19,7 +18,7 @@ import java.util.stream.Stream;
  */
 public class PathStorage extends AbstractStorage<Path> {
 
-    private Path directory;
+    private final Path directory;
 
     private final SerializationStrategy strategy;
 
@@ -99,12 +98,7 @@ public class PathStorage extends AbstractStorage<Path> {
 
     @Override
     protected List<Resume> doCopyAll() {
-        List<Path> paths = getPathStream().collect(Collectors.toList());
-        List<Resume> list = new ArrayList<>();
-        for (Path path : paths) {
-            list.add(doGet(path));
-        }
-        return list;
+        return getPathStream().map(path -> doGet(path)).collect(Collectors.toList());
     }
 
     private Stream<Path> getPathStream() {
