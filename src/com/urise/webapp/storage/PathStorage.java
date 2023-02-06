@@ -11,16 +11,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * gkislin
  * 22.07.2016
  */
-public class AbstractPathStorage extends AbstractStorage<Path> {
+public class PathStorage extends AbstractStorage<Path> {
 
     private Path directory;
 
-    private static final SerializationStrategy strategy = new ObjectStreamStorage();
+    private final SerializationStrategy strategy;
 
     protected void doWrite(Resume r, OutputStream os) {
         strategy.write(r, os);
@@ -30,8 +31,9 @@ public class AbstractPathStorage extends AbstractStorage<Path> {
         return strategy.read(is);
     }
 
-    protected AbstractPathStorage(String dir) {
+    protected PathStorage(String dir, SerializationStrategy strategy) {
         directory = Paths.get(dir);
+        this.strategy = strategy;
         Objects.requireNonNull(directory, "directory must not be null");
         if (!Files.isDirectory(directory) || !Files.isWritable(directory)) {
             throw new IllegalArgumentException(directory + " is not directory");
@@ -40,26 +42,17 @@ public class AbstractPathStorage extends AbstractStorage<Path> {
 
     @Override
     public void clear() {
-        try {
-            Files.list(directory).forEach(this::doDelete);
-        } catch (IOException e) {
-            throw new StorageException("Path delete error", null);
-        }
+        getPathStream().forEach(this::doDelete);
     }
 
     @Override
     public int size() {
-        try {
-            return (int) Files.list(directory).count();
-        } catch (IOException e) {
-            throw new StorageException("Size count error", null);
-        }
-
+        return (int) getPathStream().count();
     }
 
     @Override
     protected Path getSearchKey(String uuid) {
-        return Paths.get(directory.toString(), uuid);
+        return directory.resolve(uuid);
     }
 
     @Override
@@ -106,16 +99,19 @@ public class AbstractPathStorage extends AbstractStorage<Path> {
 
     @Override
     protected List<Resume> doCopyAll() {
-        try {
-            List<Path> paths = Files.list(directory).collect(Collectors.toList());
-            List<Resume> list = new ArrayList<>();
-            for (Path path : paths) {
-                list.add(doGet(path));
-            }
-            return list;
-        } catch (IOException e) {
-            throw new StorageException("Directory read error", null);
+        List<Path> paths = getPathStream().collect(Collectors.toList());
+        List<Resume> list = new ArrayList<>();
+        for (Path path : paths) {
+            list.add(doGet(path));
         }
+        return list;
+    }
 
+    private Stream<Path> getPathStream() {
+        try {
+            return Files.list(directory);
+        } catch (IOException e) {
+            throw new StorageException("Get paths from directory error", null);
+        }
     }
 }

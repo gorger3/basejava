@@ -15,7 +15,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractStorageTest {
-    protected static final File STORAGE_DIR = new File("C:\\Users\\GGorelik\\Documents\\java-study\\javaops\\basejava\\Storage");
+    protected static final File STORAGE_DIR = new File(
+            "C:\\Users\\GGorelik\\Documents\\java-study\\javaops\\basejava\\storage");
+
+//    private static final SerializationStrategy STRATEGY_1 = new ObjectStreamStorage();
+//    protected static final List<SerializationStrategy> strategies = Arrays.asList(STRATEGY_1);
 
     protected Storage storage;
 

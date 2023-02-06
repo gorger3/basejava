@@ -12,10 +12,22 @@ import java.util.Objects;
  * gkislin
  * 22.07.2016
  */
-public class AbstractFileStorage extends AbstractStorage<File>{
+public class FileStorage extends AbstractStorage<File>{
 
     private final File directory;
-    private static final SerializationStrategy strategy = new ObjectStreamStorage();
+    private final SerializationStrategy strategy;
+
+    protected FileStorage(File directory, SerializationStrategy strategy) {
+        Objects.requireNonNull(directory, "directory must not be null");
+        if (!directory.isDirectory()) {
+            throw new IllegalArgumentException(directory.getAbsolutePath() + " is not directory");
+        }
+        if (!directory.canRead() || !directory.canWrite()) {
+            throw new IllegalArgumentException(directory.getAbsolutePath() + " is not readable/writable");
+        }
+        this.directory = directory;
+        this.strategy = strategy;
+    }
 
     protected void doWrite(Resume r, OutputStream os) {
         strategy.write(r, os);
@@ -25,34 +37,18 @@ public class AbstractFileStorage extends AbstractStorage<File>{
         return strategy.read(is);
     }
 
-    protected AbstractFileStorage(File directory) {
-        Objects.requireNonNull(directory, "directory must not be null");
-        if (!directory.isDirectory()) {
-            throw new IllegalArgumentException(directory.getAbsolutePath() + " is not directory");
-        }
-        if (!directory.canRead() || !directory.canWrite()) {
-            throw new IllegalArgumentException(directory.getAbsolutePath() + " is not readable/writable");
-        }
-        this.directory = directory;
-    }
-
     @Override
     public void clear() {
-        File[] files = directory.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                doDelete(file);
-            }
+        File[] files = getFiles();
+        for (File file : files) {
+            doDelete(file);
         }
     }
 
     @Override
     public int size() {
-        String[] list = directory.list();
-        if (list == null) {
-            throw new StorageException("Directory read error", null);
-        }
-        return list.length;
+        File[] files = getFiles();
+        return files.length;
     }
 
     @Override
@@ -102,14 +98,21 @@ public class AbstractFileStorage extends AbstractStorage<File>{
 
     @Override
     protected List<Resume> doCopyAll() {
-        File[] files = directory.listFiles();
-        if (files == null) {
-            throw new StorageException("Directory read error", null);
-        }
+        File[] files = getFiles();
         List<Resume> list = new ArrayList<>(files.length);
         for (File file : files) {
             list.add(doGet(file));
         }
         return list;
     }
+
+    private File[] getFiles() {
+        File[] files = directory.listFiles();
+        if (files == null) {
+            throw new StorageException("Directory read error", null);
+        }
+        return files;
+    }
+
+
 }
