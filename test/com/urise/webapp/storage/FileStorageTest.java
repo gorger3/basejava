@@ -1,5 +1,6 @@
 package com.urise.webapp.storage;
 
+import com.urise.webapp.storage.strategy.SerializationStrategy;
 import com.urise.webapp.storage.strategy.StreamStrategy;
 
 public class FileStorageTest extends AbstractStorageTest {
