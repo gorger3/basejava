@@ -47,23 +47,22 @@ public class MainFile {
         File rootDir = new File(srcPath);
         List<File> listOfFiles = new ArrayList<>();
         System.out.println("----------------- printDirectoryDeeply ------------------------ ");
-        System.out.println(printDirectoryDeeply(rootDir, listOfFiles));
+        printDirectoryDeeply(rootDir, "");
         System.out.println("----------------- walkThroughDirectoryWithIndentation ------------------------ ");
         walkThroughDirectoryWithIndentation(rootDir.toPath());
     }
 
     // метод для глубокого обхода папки: возвращает все файлы в папке
-    public static List<File> printDirectoryDeeply(File rootDir, List<File> list) {
+    public static void printDirectoryDeeply(File rootDir, String offset) {
         File[] files = rootDir.listFiles();
         for (File file : files) {
             if (file.isFile()) {
-                System.out.println("File: " + file.getName());;
+                System.out.println(offset + "F: " + file.getName());;
             } else {
-                System.out.println("Directory: " + file.getName());
-                printDirectoryDeeply(file, list);
+                System.out.println(offset + "D: " + file.getName());
+                printDirectoryDeeply(file, offset + "  ");
             }
         }
-        return list;
     }
 
     // метод для глубокого обхода папки с использованием NIO
