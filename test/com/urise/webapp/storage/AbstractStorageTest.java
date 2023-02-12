@@ -18,9 +18,6 @@ public abstract class AbstractStorageTest {
     protected static final File STORAGE_DIR = new File(
             "C:\\Users\\GGorelik\\Documents\\java-study\\javaops\\basejava\\storage");
 
-//    private static final StreamSerializer STRATEGY_1 = new ObjectStreamSerializer();
-//    protected static final List<StreamSerializer> strategies = Arrays.asList(STRATEGY_1);
-
     protected Storage storage;
 
     private static final String UUID_1 = "uuid1";
