@@ -27,6 +27,10 @@ public class Organization implements Serializable {
     public Organization() {
     }
 
+    public Organization(String name, Position... positions) {
+        this(new Link(name), Arrays.asList(positions));
+    }
+
     public Organization(String name, String url, Position... positions) {
         this(new Link(name, url), Arrays.asList(positions));
     }
@@ -34,6 +38,14 @@ public class Organization implements Serializable {
     public Organization(Link homePage, List<Position> positions) {
         this.homePage = homePage;
         this.positions = positions;
+    }
+
+    public Link getHomePage() {
+        return homePage;
+    }
+
+    public List<Position> getPositions() {
+        return positions;
     }
 
     @Override
@@ -73,6 +85,10 @@ public class Organization implements Serializable {
 
         public Position(int startYear, Month startMonth, String title, String description) {
             this(of(startYear, startMonth), NOW, title, description);
+        }
+
+        public Position(int startYear, Month startMonth, int endYear, Month endMonth, String title) {
+            this(of(startYear, startMonth), of(endYear, endMonth), title, null);
         }
 
         public Position(int startYear, Month startMonth, int endYear, Month endMonth, String title, String description) {
