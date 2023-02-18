@@ -5,10 +5,17 @@ import com.urise.webapp.model.*;
 import java.io.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 public class DataStreamSerializer implements StreamSerializer {
+    private <T> void writeWithException(Collection<T> collection, DataOutputStream dos, DataConsumer<T> action) throws IOException {
+        dos.writeInt(collection.size());
+        for (T t : collection) {
+            action.writeData(t);
+        }
+    }
 
     @Override
     public void doWrite(Resume r, OutputStream os) throws IOException {
@@ -16,49 +23,43 @@ public class DataStreamSerializer implements StreamSerializer {
             dos.writeUTF(r.getUuid());
             dos.writeUTF(r.getFullName());
 
-            dos.writeInt(r.getContacts().size());
-            for (Map.Entry<ContactType, String> entry : r.getContacts().entrySet()) {
+            writeWithException(r.getContacts().entrySet(), dos, entry -> {
                 dos.writeUTF(entry.getKey().name());
                 dos.writeUTF(entry.getValue());
-            }
+            });
 
-            dos.writeInt(r.getSections().size());
             Map<SectionType, Section> sections = r.getSections();
-            for (Map.Entry<SectionType, Section> entry : sections.entrySet()) {
-                SectionType sectionType = entry.getKey();
-                dos.writeUTF(sectionType.toString());
-                switch (sectionType) {
+            writeWithException(sections.entrySet(), dos, entry -> {
+                dos.writeUTF(entry.getKey().toString());
+                switch (entry.getKey()) {
                     case PERSONAL:
                     case OBJECTIVE:
-                        dos.writeUTF(((TextSection) entry.getValue()).getContent());
+                        String content = ((TextSection) entry.getValue()).getContent();
+                        dos.writeUTF(content);
                         break;
                     case ACHIEVEMENT:
                     case QUALIFICATIONS:
                         List<String> items = ((ListSection) entry.getValue()).getItems();
-                        dos.writeInt(items.size());
-                        for (String item : items) {
-                            dos.writeUTF(item);
-                        }
+                        writeWithException(items, dos, dos::writeUTF);
                         break;
                     case EXPERIENCE:
                     case EDUCATION:
                         List<Organization> organizations = ((OrganizationSection) entry.getValue()).getOrganizations();
-                        dos.writeInt(organizations.size());
-                        for (Organization organization : organizations) {
+                        writeWithException(organizations, dos, organization -> {
                             dos.writeUTF(organization.getHomePage().getName());
                             dos.writeUTF(organization.getHomePage().getUrl() != null ? organization.getHomePage().getUrl() : "");
                             List<Organization.Position> positions = organization.getPositions();
-                            dos.writeInt(positions.size());
-                            for (Organization.Position position : positions) {
+                            writeWithException(positions, dos, position -> {
                                 dos.writeUTF(position.getStartDate().toString());
                                 dos.writeUTF(position.getEndDate().toString());
                                 dos.writeUTF(position.getTitle());
                                 dos.writeUTF(position.getDescription() != null ? position.getDescription() : "");
-                            }
-                        }
+
+                            });
+                        });
                         break;
                 }
-            }
+            });
         }
     }
 
