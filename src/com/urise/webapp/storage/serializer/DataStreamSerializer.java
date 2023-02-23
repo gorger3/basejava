@@ -10,12 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 public class DataStreamSerializer implements StreamSerializer {
-    private <T> void writeWithException(Collection<T> collection, DataOutputStream dos, DataConsumer<T> action) throws IOException {
-        dos.writeInt(collection.size());
-        for (T t : collection) {
-            action.writeData(t);
-        }
-    }
 
     @Override
     public void doWrite(Resume r, OutputStream os) throws IOException {
@@ -69,13 +63,11 @@ public class DataStreamSerializer implements StreamSerializer {
             String uuid = dis.readUTF();
             String fullName = dis.readUTF();
             Resume resume = new Resume(uuid, fullName);
-            int sizeOfContacts = dis.readInt();
-            for (int i = 0; i < sizeOfContacts; i++) {
-                resume.addContact(ContactType.valueOf(dis.readUTF()), dis.readUTF());
-            }
 
-            int sizeOfSections = dis.readInt();
-            for (int i = 0; i < sizeOfSections; i++) {
+            // чтение контактов
+            readWithException(dis, () -> resume.addContact(ContactType.valueOf(dis.readUTF()), dis.readUTF()));
+            // чтение секций
+            readWithException(dis, () -> {
                 SectionType sectionType = SectionType.valueOf(dis.readUTF());
                 switch (sectionType) {
                     case PERSONAL:
@@ -85,33 +77,28 @@ public class DataStreamSerializer implements StreamSerializer {
                         break;
                     case ACHIEVEMENT:
                     case QUALIFICATIONS:
-                        int sizeOfListSection = dis.readInt();
                         List<String> items = new ArrayList<>();
-                        for (int j = 0; j < sizeOfListSection; j++) {
-                            items.add(dis.readUTF());
-                        }
+                        readWithException(dis, () -> items.add(dis.readUTF()));
                         resume.addSection(sectionType, new ListSection(items));
                         break;
                     case EXPERIENCE:
                     case EDUCATION:
-                        int sizeOfOrganizations = dis.readInt();
-                        List<Organization> organizations = new ArrayList<>();
-                        for (int j = 0; j < sizeOfOrganizations; j++) {
+                        readWithException(dis, () -> {
+                            List<Organization> organizations = new ArrayList<>();
                             String name = dis.readUTF();
                             String url = dis.readUTF();
                             if (url.equals("")) {
-                                url =  null;
+                                url = null;
                             }
                             Link homePage = new Link(name, url);
-                            int sizeOfPositions = dis.readInt();
-                            List<Organization.Position> positions = new ArrayList<>();
-                            for (int k = 0; k < sizeOfPositions; k++) {
+                            readWithException(dis, () -> {
+                                List<Organization.Position> positions = new ArrayList<>();
                                 LocalDate startDate = LocalDate.parse(dis.readUTF());
                                 LocalDate endDate = LocalDate.parse(dis.readUTF());
                                 String title = dis.readUTF();
                                 String description = dis.readUTF();
                                 if (description.equals("")) {
-                                    description =  null;
+                                    description = null;
                                 }
                                 Organization.Position position = new Organization.Position(
                                         startDate,
@@ -119,14 +106,38 @@ public class DataStreamSerializer implements StreamSerializer {
                                         title,
                                         description);
                                 positions.add(position);
-                            }
-                            organizations.add(new Organization(homePage, positions));
-                        }
-                        resume.addSection(sectionType, new OrganizationSection(organizations));
+                                organizations.add(new Organization(homePage, positions));
+                            });
+                            resume.addSection(sectionType, new OrganizationSection(organizations));
+                        });
                         break;
                 }
-            }
+            });
             return resume;
         }
+    }
+
+    private <T> void writeWithException(Collection<T> collection, DataOutputStream dos, DataConsumer<T> action) throws IOException {
+        dos.writeInt(collection.size());
+        for (T t : collection) {
+            action.writeData(t);
+        }
+    }
+
+    private void readWithException(DataInputStream dis, DataSupplier action) throws IOException {
+        int size = dis.readInt();
+        for (int i = 0; i < size; i++) {
+            action.readData();
+        }
+    }
+
+    @FunctionalInterface
+    private interface DataConsumer<T> {
+        void writeData(T t) throws IOException;
+    }
+
+    @FunctionalInterface
+    private interface DataSupplier {
+        void readData() throws IOException;
     }
 }
