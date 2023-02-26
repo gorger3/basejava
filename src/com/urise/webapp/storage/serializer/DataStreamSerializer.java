@@ -77,22 +77,20 @@ public class DataStreamSerializer implements StreamSerializer {
                         break;
                     case ACHIEVEMENT:
                     case QUALIFICATIONS:
-                        List<String> items = new ArrayList<>();
-                        readWithException(dis, () -> fillTheList(items, list -> list.add(dis.readUTF())));
-                        resume.addSection(sectionType, new ListSection(items));
+                        resume.addSection(sectionType, new ListSection(readListWithException(dis, dis::readUTF)));
                         break;
                     case EXPERIENCE:
                     case EDUCATION:
-                        List<Organization> organizations = new ArrayList<>();
-                        readWithException(dis, () -> fillTheList(organizations, list -> {
+                        resume.addSection(sectionType, new OrganizationSection(readListWithException(dis, () -> { // возвращает
+                            // список прочитанных организаций, заносит его в секцию и добавляет её в резюме
                             String name = dis.readUTF();
                             String url = dis.readUTF();
                             if (url.equals("")) {
                                 url = null;
                             }
                             Link homePage = new Link(name, url);
-                            List<Organization.Position> positions = new ArrayList<>();
-                            readWithException(dis, () -> fillTheList(positions, list1 -> {
+                            return new Organization(homePage, readListWithException(dis, () -> { // возвращает список
+                                // прочитанных позиций, заносит его в новую организацию и возвращает её
                                 LocalDate startDate = LocalDate.parse(dis.readUTF());
                                 LocalDate endDate = LocalDate.parse(dis.readUTF());
                                 String title = dis.readUTF();
@@ -100,16 +98,13 @@ public class DataStreamSerializer implements StreamSerializer {
                                 if (description.equals("")) {
                                     description = null;
                                 }
-                                Organization.Position position = new Organization.Position(
+                                return new Organization.Position( // возвращает прочитанную позицию
                                         startDate,
                                         endDate,
                                         title,
                                         description);
-                                positions.add(position);
                             }));
-                            organizations.add(new Organization(homePage, positions));
-                        }));
-                        resume.addSection(sectionType, new OrganizationSection(organizations));
+                        })));
                         break;
                 }
             });
@@ -141,13 +136,17 @@ public class DataStreamSerializer implements StreamSerializer {
         void readData() throws IOException;
     }
 
-    private <T> List<T> fillTheList(List<T> list, AddItemToList<T> adder) throws IOException {
-        adder.addToList(list);
-        return list;
+    private <T> List<T> readListWithException(DataInputStream dis, ListReader<T> list) throws IOException {
+        List<T> readerList = new ArrayList<>(); // пустой список, который предстоит заполнить прочитанными записями
+        int size = dis.readInt();
+        for (int i = 0; i < size; i++) {
+            readerList.add(list.readList()); // чтение записи и добавление её в качестве элемента списка
+        }
+        return readerList; // прочитанный список
     }
 
     @FunctionalInterface
-    private interface AddItemToList<T> {
-        void addToList(List<T> list) throws IOException;
+    interface ListReader<T> {
+        T readList() throws IOException; // читает запись и возвращает прочитанный объект (позицию, организацию, секцию)
     }
 }
