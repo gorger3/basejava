@@ -77,44 +77,39 @@ public class DataStreamSerializer implements StreamSerializer {
                         break;
                     case ACHIEVEMENT:
                     case QUALIFICATIONS:
-                        resume.addSection(sectionType, new ListSection(fillTheList(
-                                list -> readWithException(dis, () -> list.add(dis.readUTF()))))
-                        );
+                        List<String> items = new ArrayList<>();
+                        readWithException(dis, () -> fillTheList(items, list -> list.add(dis.readUTF())));
+                        resume.addSection(sectionType, new ListSection(items));
                         break;
                     case EXPERIENCE:
                     case EDUCATION:
-                        resume.addSection(sectionType, new OrganizationSection(fillTheList(
-                                organizations ->
-                                        readWithException(dis, () -> { // лямбда для чтения организации
-                                            String name = dis.readUTF();
-                                            String url = dis.readUTF();
-                                            if (url.equals("")) {
-                                                url = null;
-                                            }
-                                            Link homePage = new Link(name, url);
-
-                                            organizations.add(new Organization(homePage,
-                                                    fillTheList(
-                                                    positions ->
-                                                            readWithException(dis, () -> { // лямбда для чтения должности
-                                                                LocalDate startDate = LocalDate.parse(dis.readUTF());
-                                                                LocalDate endDate = LocalDate.parse(dis.readUTF());
-                                                                String title = dis.readUTF();
-                                                                String description = dis.readUTF();
-                                                                if (description.equals("")) {
-                                                                    description = null;
-                                                                }
-                                                                Organization.Position position = new Organization.Position(
-                                                                        startDate,
-                                                                        endDate,
-                                                                        title,
-                                                                        description);
-                                                                positions.add(position);
-                                                            }))));
-                                        }))
-                        ));
-
-
+                        List<Organization> organizations = new ArrayList<>();
+                        readWithException(dis, () -> fillTheList(organizations, list -> {
+                            String name = dis.readUTF();
+                            String url = dis.readUTF();
+                            if (url.equals("")) {
+                                url = null;
+                            }
+                            Link homePage = new Link(name, url);
+                            List<Organization.Position> positions = new ArrayList<>();
+                            readWithException(dis, () -> fillTheList(positions, list1 -> {
+                                LocalDate startDate = LocalDate.parse(dis.readUTF());
+                                LocalDate endDate = LocalDate.parse(dis.readUTF());
+                                String title = dis.readUTF();
+                                String description = dis.readUTF();
+                                if (description.equals("")) {
+                                    description = null;
+                                }
+                                Organization.Position position = new Organization.Position(
+                                        startDate,
+                                        endDate,
+                                        title,
+                                        description);
+                                positions.add(position);
+                            }));
+                            organizations.add(new Organization(homePage, positions));
+                        }));
+                        resume.addSection(sectionType, new OrganizationSection(organizations));
                         break;
                 }
             });
@@ -146,14 +141,13 @@ public class DataStreamSerializer implements StreamSerializer {
         void readData() throws IOException;
     }
 
-    private <T> List<T> fillTheList(ListConsumer<T> consumer) throws IOException {
-        List<T> list = new ArrayList<>();
-        consumer.actionOnList(list);
+    private <T> List<T> fillTheList(List<T> list, AddItemToList<T> adder) throws IOException {
+        adder.addToList(list);
         return list;
     }
 
     @FunctionalInterface
-    private interface ListConsumer<T> {
-        void actionOnList(List<T> list) throws IOException;
+    private interface AddItemToList<T> {
+        void addToList(List<T> list) throws IOException;
     }
 }
