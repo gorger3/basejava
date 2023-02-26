@@ -7,8 +7,8 @@ public class LazySingleton {
 
     }
 
-    private class LazySingletonHolder {
-        private final static LazySingleton INSTANCE = new LazySingleton();
+    private static class LazySingletonHolder {
+        private static final LazySingleton INSTANCE = new LazySingleton();
     }
 
         public LazySingleton getInstance() {
