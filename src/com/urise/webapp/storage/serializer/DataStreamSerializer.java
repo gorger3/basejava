@@ -17,33 +17,33 @@ public class DataStreamSerializer implements StreamSerializer {
             dos.writeUTF(r.getUuid());
             dos.writeUTF(r.getFullName());
 
-            writeWithException(r.getContacts().entrySet(), dos, entry -> {
+            writeCollection(r.getContacts().entrySet(), dos, entry -> {
                 dos.writeUTF(entry.getKey().name());
                 dos.writeUTF(entry.getValue());
             });
 
             Map<SectionType, Section> sections = r.getSections();
-            writeWithException(sections.entrySet(), dos, entry -> {
-                dos.writeUTF(entry.getKey().toString());
-                switch (entry.getKey()) {
+            writeCollection(sections.entrySet(), dos, entry -> {
+                SectionType type = entry.getKey();
+                Section section = entry.getValue();
+                dos.writeUTF(type.name());
+                switch (type) {
                     case PERSONAL:
                     case OBJECTIVE:
-                        String content = ((TextSection) entry.getValue()).getContent();
-                        dos.writeUTF(content);
+                        dos.writeUTF(((TextSection) section).getContent());
                         break;
                     case ACHIEVEMENT:
                     case QUALIFICATIONS:
-                        List<String> items = ((ListSection) entry.getValue()).getItems();
-                        writeWithException(items, dos, dos::writeUTF);
+                        writeCollection(((ListSection) section).getItems(), dos, dos::writeUTF);
                         break;
                     case EXPERIENCE:
                     case EDUCATION:
-                        List<Organization> organizations = ((OrganizationSection) entry.getValue()).getOrganizations();
-                        writeWithException(organizations, dos, organization -> {
+                        List<Organization> organizations = ((OrganizationSection) section).getOrganizations();
+                        writeCollection(organizations, dos, organization -> {
                             dos.writeUTF(organization.getHomePage().getName());
                             dos.writeUTF(organization.getHomePage().getUrl() != null ? organization.getHomePage().getUrl() : "");
                             List<Organization.Position> positions = organization.getPositions();
-                            writeWithException(positions, dos, position -> {
+                            writeCollection(positions, dos, position -> {
                                 dos.writeUTF(position.getStartDate().toString());
                                 dos.writeUTF(position.getEndDate().toString());
                                 dos.writeUTF(position.getTitle());
@@ -63,90 +63,76 @@ public class DataStreamSerializer implements StreamSerializer {
             String uuid = dis.readUTF();
             String fullName = dis.readUTF();
             Resume resume = new Resume(uuid, fullName);
-
             // чтение контактов
-            readWithException(dis, () -> resume.addContact(ContactType.valueOf(dis.readUTF()), dis.readUTF()));
+            readItems(dis, () -> resume.addContact(ContactType.valueOf(dis.readUTF()), dis.readUTF()));
             // чтение секций
-            readWithException(dis, () -> { //лямбда для чтения секции
+            readItems(dis, () -> { //лямбда для чтения секции
                 SectionType sectionType = SectionType.valueOf(dis.readUTF());
-                switch (sectionType) {
-                    case PERSONAL:
-                    case OBJECTIVE:
-                        Section testSection = new TextSection(dis.readUTF());
-                        resume.addSection(sectionType, testSection);
-                        break;
-                    case ACHIEVEMENT:
-                    case QUALIFICATIONS:
-                        resume.addSection(sectionType, new ListSection(readListWithException(dis, dis::readUTF)));
-                        break;
-                    case EXPERIENCE:
-                    case EDUCATION:
-                        resume.addSection(sectionType, new OrganizationSection(readListWithException(dis, () -> { // возвращает
-                            // список прочитанных организаций, заносит его в секцию и добавляет её в резюме
-                            String name = dis.readUTF();
-                            String url = dis.readUTF();
-                            if (url.equals("")) {
-                                url = null;
-                            }
-                            Link homePage = new Link(name, url);
-                            return new Organization(homePage, readListWithException(dis, () -> { // возвращает список
-                                // прочитанных позиций, заносит его в новую организацию и возвращает её
-                                LocalDate startDate = LocalDate.parse(dis.readUTF());
-                                LocalDate endDate = LocalDate.parse(dis.readUTF());
-                                String title = dis.readUTF();
-                                String description = dis.readUTF();
-                                if (description.equals("")) {
-                                    description = null;
-                                }
-                                return new Organization.Position( // возвращает прочитанную позицию
-                                        startDate,
-                                        endDate,
-                                        title,
-                                        description);
-                            }));
-                        })));
-                        break;
-                }
+                resume.addSection(sectionType, readSection(dis, sectionType));
             });
             return resume;
         }
     }
 
-    private <T> void writeWithException(Collection<T> collection, DataOutputStream dos, DataConsumer<T> action) throws IOException {
+    private Section readSection(DataInputStream dis, SectionType sectionType) throws IOException {
+        switch (sectionType) {
+            case PERSONAL:
+            case OBJECTIVE:
+                return new TextSection(dis.readUTF());
+            case ACHIEVEMENT:
+            case QUALIFICATIONS:
+                return new ListSection(readList(dis, dis::readUTF));
+            case EXPERIENCE:
+            case EDUCATION:
+                return new OrganizationSection(readList(dis, () -> { // возвращает
+                    // список прочитанных организаций, заносит его в секцию и добавляет её в резюме
+                    return new Organization(new Link(dis.readUTF(), dis.readUTF()), readList(dis, () -> { // возвращает список
+                        // прочитанных позиций, заносит его в новую организацию и возвращает её
+                        return new Organization.Position( // возвращает прочитанную позицию
+                                LocalDate.parse(dis.readUTF()), LocalDate.parse(dis.readUTF()),
+                                dis.readUTF(), dis.readUTF());
+                    }));
+                }));
+            default:
+                throw new IllegalStateException();
+        }
+    }
+
+    private <T> void writeCollection(Collection<T> collection, DataOutputStream dos, ElementWriter<T> writer) throws IOException {
         dos.writeInt(collection.size());
-        for (T t : collection) {
-            action.writeData(t);
+        for (T item : collection) {
+            writer.write(item);
         }
     }
 
     @FunctionalInterface
-    private interface DataConsumer<T> {
-        void writeData(T t) throws IOException;
+    private interface ElementWriter<T> {
+        void write(T t) throws IOException;
     }
 
-    private void readWithException(DataInputStream dis, DataSupplier action) throws IOException {
+    private void readItems(DataInputStream dis, ItemProcessor processor) throws IOException {
         int size = dis.readInt();
         for (int i = 0; i < size; i++) {
-            action.readData();
+            processor.process();
         }
     }
 
     @FunctionalInterface
-    private interface DataSupplier {
-        void readData() throws IOException;
+    private interface ItemProcessor {
+        void process() throws IOException;
     }
 
-    private <T> List<T> readListWithException(DataInputStream dis, ListReader<T> list) throws IOException {
-        List<T> readerList = new ArrayList<>(); // пустой список, который предстоит заполнить прочитанными записями
+    private <T> List<T> readList(DataInputStream dis, ElementReader<T> reader) throws IOException {
         int size = dis.readInt();
+        List<T> list = new ArrayList<>(size); // пустой список, который предстоит заполнить прочитанными записями
         for (int i = 0; i < size; i++) {
-            readerList.add(list.readList()); // чтение записи и добавление её в качестве элемента списка
+            list.add(reader.read()); // чтение записи и добавление её в качестве элемента списка
         }
-        return readerList; // прочитанный список
+        return list; // прочитанный список
     }
 
     @FunctionalInterface
-    interface ListReader<T> {
-        T readList() throws IOException; // читает запись и возвращает прочитанный объект (позицию, организацию, секцию)
+    interface ElementReader<T> {
+        T read() throws IOException; // читает запись и возвращает прочитанный объект (позицию, организацию, секцию)
     }
 }
