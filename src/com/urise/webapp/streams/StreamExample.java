@@ -24,7 +24,6 @@ public class StreamExample {
         return Arrays.stream(values)
                 .distinct()     // отсеивает одинаковые
                 .sorted()       // сортирует по ↑
-                .boxed()        // оборачивает int в Integer
                 .reduce(0, (i, i2) -> i * 10 + i2);
     }
 
