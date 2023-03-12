@@ -19,8 +19,13 @@ public class SqlStorage implements Storage {
 
     @Override
     public void clear() {
-        String query = "delete from resume";
-        executePreparedStatement(query, ps -> ps.executeQuery());
+        try (Connection conn = connectionFactory.getConnection();
+             PreparedStatement ps = conn.prepareStatement("delete from resume")) {
+            ps.execute();
+        } catch (SQLException e) {
+            throw new StorageException(e);
+        }
+
     }
 
     @Override
@@ -31,18 +36,21 @@ public class SqlStorage implements Storage {
             ps.setString(2, r.getUuid());
             ps.execute();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new StorageException(e);
         }
     }
 
     @Override
     public void save(Resume r) {
-        String query = "insert into resume (uuid, full_name) values (?, ?)";
-        executePreparedStatement(query, ps -> {
+        try (Connection conn = connectionFactory.getConnection();
+             PreparedStatement ps = conn.prepareStatement("insert into resume (uuid, full_name) values (?, ?)")) {
             ps.setString(1, r.getUuid());
             ps.setString(2, r.getFullName());
-            return ps.executeQuery();
-        });
+            ps.executeQuery();
+        } catch (SQLException e) {
+            throw new StorageException(e);
+        }
+
     }
 
     @Override
@@ -116,18 +124,18 @@ public class SqlStorage implements Storage {
         }
     }
 
-    private ResultSet executePreparedStatement(String query, SqlHelper helper) {
-        try (Connection conn = connectionFactory.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
-            return helper.execute(ps);
-        } catch (SQLException e) {
-            throw new StorageException(e);
-        }
-    }
-
-    @FunctionalInterface
-    interface SqlHelper {
-        ResultSet execute(PreparedStatement ps) throws SQLException;
-    }
+//    private ResultSet executePreparedStatement(String query, SqlHelper helper) {
+//        try (Connection conn = connectionFactory.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
+//            return helper.execute(ps);
+//        } catch (SQLException e) {
+//            throw new StorageException(e);
+//        }
+//    }
+//
+//    @FunctionalInterface
+//    interface SqlHelper {
+//        ResultSet execute(PreparedStatement ps) throws SQLException;
+//    }
 
 }
 
