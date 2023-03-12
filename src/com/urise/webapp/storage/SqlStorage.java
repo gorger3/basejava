@@ -56,22 +56,6 @@ public class SqlStorage implements Storage {
     @Override
     public Resume get(String uuid) {
         String query = "select * from resume r where r.uuid = ?";
-//        ResultSet rs = executePreparedStatement(query, ps -> {
-//            ps.setString(1, uuid);
-//            ResultSet resultSet = ps.executeQuery();
-//            if (!resultSet.next()) {
-//                throw new NotExistStorageException(uuid);
-//            }
-//            Resume r = new Resume(uuid, resultSet.getString("full_name"));
-//
-//            return resultSet;
-
-//            ResultSet rs = ps.executeQuery();
-//            if (!rs.next()) {
-//                throw new NotExistStorageException(uuid);
-//            }
-//            Resume r = new Resume(uuid, rs.getString("full_name"));
-//        });
         try (Connection conn = connectionFactory.getConnection();
              PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setString(1, uuid);
