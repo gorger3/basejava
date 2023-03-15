@@ -11,11 +11,17 @@ public class Config {
     private Properties props = new Properties();
 
     private File storageDir;
+    private String dbUrl;
+    private String dbUser;
+    private String dbPassword;
 
     private Config() {
         try (FileInputStream fis = new FileInputStream(PROPS)) {
             props.load(fis);
             storageDir = new File(props.getProperty("storage.dir"));
+            dbUrl = props.getProperty("db.url");
+            dbUser = props.getProperty("db.user");
+            dbPassword = props.getProperty("db.password");
         } catch (IOException e) {
             throw new IllegalStateException("Invalid resumes.properties" + PROPS.getAbsolutePath());
         }
@@ -28,5 +34,17 @@ public class Config {
 
     public File getStorageDir() {
         return storageDir;
+    }
+
+    public String getDbUrl() {
+        return dbUrl;
+    }
+
+    public String getDbUser() {
+        return dbUser;
+    }
+
+    public String getDbPassword() {
+        return dbPassword;
     }
 }

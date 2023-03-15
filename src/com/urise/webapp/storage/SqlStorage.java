@@ -14,112 +14,159 @@ public class SqlStorage implements Storage {
     private ConnectionFactory connectionFactory;
 
     SqlStorage(String dbUrl, String dbUser, String dbPassword) {
-        ConnectionFactory connectionFactory = () -> DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+        connectionFactory = () -> DriverManager.getConnection(dbUrl, dbUser, dbPassword);
     }
 
     @Override
     public void clear() {
-        try (Connection conn = connectionFactory.getConnection();
-             PreparedStatement ps = conn.prepareStatement("delete from resume")) {
-            ps.execute();
-        } catch (SQLException e) {
-            throw new StorageException(e);
-        }
-
+        String query = "truncate resume restart identity cascade";
+        executePreparedStatement(query, ps -> ps.execute());
+//        try (Connection conn = connectionFactory.getConnection();
+//             PreparedStatement ps = conn.prepareStatement("truncate resume restart identity cascade")) {
+//            ps.execute();
+//        } catch (SQLException e) {
+//            throw new StorageException(e);
+//        }
     }
 
     @Override
     public void update(Resume r) {
-        try (Connection conn = connectionFactory.getConnection();
-             PreparedStatement ps = conn.prepareStatement("update resume set full_name = ? where uuid = ?")) {
+        String query = "update resume set full_name = ? where uuid = ?";
+        executePreparedStatement(query, ps -> {
             ps.setString(1, r.getFullName());
             ps.setString(2, r.getUuid());
             ps.execute();
-        } catch (SQLException e) {
-            throw new StorageException(e);
-        }
+            return null;
+        });
+//        try (Connection conn = connectionFactory.getConnection();
+//             PreparedStatement ps = conn.prepareStatement("update resume set full_name = ? where uuid = ?")) {
+//            ps.setString(1, r.getFullName());
+//            ps.setString(2, r.getUuid());
+//            ps.execute();
+//        } catch (SQLException e) {
+//            throw new StorageException(e);
+//        }
     }
 
     @Override
     public void save(Resume r) {
-        try (Connection conn = connectionFactory.getConnection();
-             PreparedStatement ps = conn.prepareStatement("insert into resume (uuid, full_name) values (?, ?)")) {
+        String query = "insert into resume (uuid, full_name) values (?, ?)";
+        executePreparedStatement(query, ps -> {
             ps.setString(1, r.getUuid());
             ps.setString(2, r.getFullName());
-            ps.executeQuery();
-        } catch (SQLException e) {
-            throw new StorageException(e);
-        }
-
+            ps.execute();
+            return null;
+        });
+//        try (Connection conn = connectionFactory.getConnection();
+//             PreparedStatement ps = conn.prepareStatement("insert into resume (uuid, full_name) values (?, ?)")) {
+//            ps.setString(1, r.getUuid());
+//            ps.setString(2, r.getFullName());
+//            ps.execute();
+//        } catch (SQLException e) {
+//            throw new ExistStorageException(e);
+//        }
     }
 
     @Override
     public Resume get(String uuid) {
         String query = "select * from resume r where r.uuid = ?";
-        try (Connection conn = connectionFactory.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+        return executePreparedStatement(query, ps -> {
             ps.setString(1, uuid);
             ResultSet rs = ps.executeQuery();
             if (!rs.next()) {
                 throw new NotExistStorageException(uuid);
             }
-            Resume r = new Resume(uuid, rs.getString("full_name"));
-            return r;
-        } catch (SQLException e) {
-            throw new StorageException(e);
-        }
+            return new Resume(uuid, rs.getString("full_name"));
+        });
+
+//        try (Connection conn = connectionFactory.getConnection();
+//             PreparedStatement ps = conn.prepareStatement("select * from resume r where r.uuid = ?")) {
+//            ps.setString(1, uuid);
+//            ResultSet rs = ps.executeQuery();
+//            if (!rs.next()) {
+//                throw new NotExistStorageException(uuid);
+//            }
+//            Resume r = new Resume(uuid, rs.getString("full_name"));
+//            return r;
+//        } catch (SQLException e) {
+//            throw new StorageException(e);
+//        }
     }
 
     @Override
     public void delete(String uuid) {
-        try (Connection conn = connectionFactory.getConnection();
-             PreparedStatement ps = conn.prepareStatement("delete from resume where uuid = ?")) {
+        String query = "delete from resume where uuid = ?";
+        executePreparedStatement(query, ps -> {
             ps.setString(1, uuid);
             ps.execute();
-        } catch (SQLException e) {
-            throw new StorageException(e);
-        }
+            return null;
+        });
+//        try (Connection conn = connectionFactory.getConnection();
+//             PreparedStatement ps = conn.prepareStatement("delete from resume where uuid = ?")) {
+//            ps.setString(1, uuid);
+//            ps.execute();
+//        } catch (SQLException e) {
+//            throw new NotExistStorageException(e);
+//        }
     }
 
     @Override
     public List<Resume> getAllSorted() {
-        try (Connection conn = connectionFactory.getConnection();
-             PreparedStatement ps = conn.prepareStatement("select * from resume order by uuid")) {
+        String query = "select * from resume order by uuid";
+        return executePreparedStatement(query, ps -> {
             ResultSet rs = ps.executeQuery();
             List<Resume> list = new ArrayList<>();
             while (rs.next()) {
-                list.add(new Resume(rs.getString("uuid"), rs.getString("full_name")));
-            }
+                list.add(new Resume((rs.getString("uuid")).trim(),
+                        (rs.getString("full_name")).trim())); // получает строки из ResultSet и удаляет в них пробелы
+            }                                                            // иначе при сравнении в тесте строки стчитаются разными
             return list;
-        } catch (SQLException e) {
-            throw new StorageException(e);
-        }
+        });
+//        try (Connection conn = connectionFactory.getConnection();
+//             PreparedStatement ps = conn.prepareStatement("select * from resume order by uuid")) {
+//            ResultSet rs = ps.executeQuery();
+//            List<Resume> list = new ArrayList<>();
+//            while (rs.next()) {
+//                list.add(new Resume((rs.getString("uuid")).trim(),
+//                        (rs.getString("full_name")).trim())); // получает строки из ResultSet и удаляет в них пробелы
+//            }                                                            // иначе при сравнении в тесте строки стчитаются разными
+//            return list;
+//        } catch (SQLException e) {
+//            throw new StorageException(e);
+//        }
     }
 
     @Override
     public int size() {
-        try (Connection conn = connectionFactory.getConnection();
-             PreparedStatement ps = conn.prepareStatement("select count(*) from resume")) {
+        String query = "select count(*) from resume";
+        return executePreparedStatement(query, ps -> {
             ResultSet rs = ps.executeQuery();
-            rs.last();
-            return rs.getRow();
+            rs.next();
+            return rs.getInt(1);
+        });
+//        try (Connection conn = connectionFactory.getConnection();
+//             PreparedStatement ps = conn.prepareStatement("select count(*) from resume")) {
+//            ResultSet rs = ps.executeQuery();
+//            rs.next();
+//            return rs.getInt(1);
+//        } catch (SQLException e) {
+//            throw new StorageException(e);
+//        }
+    }
+
+    private <T> T executePreparedStatement(String query, SqlHelper<T> helper) {
+        try (Connection conn = connectionFactory.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+             return helper.execute(ps);
         } catch (SQLException e) {
             throw new StorageException(e);
         }
     }
 
-//    private ResultSet executePreparedStatement(String query, SqlHelper helper) {
-//        try (Connection conn = connectionFactory.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
-//            return helper.execute(ps);
-//        } catch (SQLException e) {
-//            throw new StorageException(e);
-//        }
-//    }
-//
-//    @FunctionalInterface
-//    interface SqlHelper {
-//        ResultSet execute(PreparedStatement ps) throws SQLException;
-//    }
+    @FunctionalInterface
+    interface SqlHelper<T> {
+        T execute(PreparedStatement ps) throws SQLException;
+    }
 
 }
 
