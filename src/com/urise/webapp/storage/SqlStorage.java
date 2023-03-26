@@ -32,88 +32,82 @@ public class SqlStorage implements Storage {
     @Override
     public void update(Resume r) {
         String uuid = r.getUuid();
-        String query = "UPDATE resume SET full_name = ? WHERE uuid = ?";
-        sqlHelper.executePreparedStatement(query, ps -> {
-            ps.setString(1, r.getFullName());
-            ps.setString(2, uuid);
-            if (ps.executeUpdate() == 0) {
-                throw new NotExistStorageException(r);
+        sqlHelper.transactionalExecute(conn -> {
+            try (PreparedStatement ps = conn.prepareStatement("UPDATE resume SET full_name = ? WHERE uuid = ?")) {
+                ps.setString(1, r.getFullName());
+                ps.setString(2, uuid);
+                if (ps.executeUpdate() == 0) {
+                    throw new NotExistStorageException(r);
+                }
+            }
+            if (r.getContacts().entrySet().size() == 0) { // если у резюме с обновлениями нет контактов, удаляет старые контакты
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM contact WHERE resume_uuid = ?")) {
+                    ps.setString(1, uuid);
+                    ps.execute();
+                }
+            } else { // если у резюме с обновлениями есть контакты
+                Map<ContactType, String> contactsFromResume = r.getContacts();
+                try (PreparedStatement ps = conn.prepareStatement("SELECT * FROM contact WHERE resume_uuid = ?")) { // достаёт старые контакты из таблицы
+                    List<ContactType> listOfUpdatedContacts = new ArrayList<>();
+                    ps.setString(1, uuid);
+                    ResultSet rs = ps.executeQuery();
+                    while (rs.next()) {
+                        ContactType type = ContactType.valueOf(rs.getString("type"));
+                        if (contactsFromResume.containsKey(type)) { // если контакту в обновлённом резюме есть соответствие в таблице старых контактов
+                            try (PreparedStatement psUpd = conn.prepareStatement("UPDATE mydb.public.contact SET value = ? WHERE type = ? AND resume_uuid = ?")) {
+                                psUpd.setString(1, contactsFromResume.get(type));
+                                psUpd.setString(2, type.name());
+                                psUpd.setString(3, uuid);
+                                psUpd.execute();
+
+                            }
+                            listOfUpdatedContacts.add(type);
+                        } else { // удаляет из таблицы контакты, которых нет в обновлённом резюме
+                            try (PreparedStatement psDlt = conn.prepareStatement("DELETE FROM mydb.public.contact WHERE type = ? AND resume_uuid = ?")) {
+                                psDlt.setString(1, type.name());
+                                psDlt.setString(2, uuid);
+                                psDlt.execute();
+                            }
+                        }
+                    }
+                    for (Map.Entry<ContactType, String> entry : r.getContacts().entrySet()) { // если в обновлённом резюме есть контакты, которых нет в таблице, заносит их в таблицу
+                        if (listOfUpdatedContacts.contains(entry.getKey())) { // если контакт из резюме уже обновлён в таблице с помощью UPDATE,
+                            continue;                                         // начинает новую итерацию
+                        }
+                        try (PreparedStatement psIns = conn.prepareStatement("INSERT INTO mydb.public.contact (resume_uuid, type, value) VALUES (?, ?, ?)")) { // сохраняет новые контакты из резюме
+                            psIns.setString(1, uuid);
+                            psIns.setString(2, entry.getKey().name());
+                            psIns.setString(3, entry.getValue());
+                            psIns.execute();
+
+                        }
+                    }
+                }
             }
             return null;
         });
-        if (r.getContacts().entrySet().size() == 0) { // если у обновлённого резюме нет контактов, удаляет старые контакты
-            String queryForContacts = "DELETE FROM contact WHERE resume_uuid = ?";
-            sqlHelper.executePreparedStatement(queryForContacts, ps -> {
-                ps.setString(1, uuid);
-                ps.executeUpdate();
-                return null;
-            });
-        } else { // если у обновлённого резюме есть контакты
-            Map<ContactType, String> mapFromResume = r.getContacts();
-            String queryToGetExistingContacts = "SELECT * FROM contact WHERE resume_uuid = ?"; // достаёт старые контакты из таблицы
-            List<ContactType> listOfUpdatedContacts = new ArrayList<>();
-            sqlHelper.executePreparedStatement(queryToGetExistingContacts, ps -> {
-                ps.setString(1, uuid);
-                ResultSet rs = ps.executeQuery();
-                while (rs.next()) {
-                    ContactType type = ContactType.valueOf(rs.getString("type"));
-                    if (mapFromResume.containsKey(type)) { // если контакту в обновлённом резюме есть соответствие в таблице старых контактов
-                        String queryToUpdateContact = "UPDATE mydb.public.contact SET value = ? WHERE type = ? AND resume_uuid = ?";
-                        sqlHelper.executePreparedStatement(queryToUpdateContact, psU -> {
-                            psU.setString(1, mapFromResume.get(type));
-                            psU.setString(2, type.name());
-                            psU.setString(3, uuid);
-                            psU.execute();
-                            return null;
-                        });
-                        listOfUpdatedContacts.add(type);
-                    } else { // если контакту в обновлённом резюме нет соответствие в таблице старых контактов
-                        String queryToDeleteContact = "DELETE FROM mydb.public.contact WHERE type = ? AND resume_uuid = ?";
-                        sqlHelper.executePreparedStatement(queryToDeleteContact, psD -> {
-                            psD.setString(1, type.name());
-                            psD.setString(2, uuid);
-                            psD.execute();
-                            return null;
-                        });
-                    }
-                }
-                return null;
-            });
-            for (Map.Entry<ContactType, String> entry : r.getContacts().entrySet()) { // сохраняет контакты из обновлённого резюме, которых нет в таблице старых контактов
-                if (listOfUpdatedContacts.contains(entry.getKey())) { // если контакт из резюме есть в списке контактов, уже обновлённых в таблице
-                    continue; // начинает новую итерацию, поскольку контакт уже был обновлён с помощью UPDATE
-                }
-                String queryToSaveNewContact = "INSERT INTO mydb.public.contact (resume_uuid, type, value) VALUES (?, ?, ?)"; // сохраняет новые контакты из обновлённого резюме
-                sqlHelper.executePreparedStatement(queryToSaveNewContact, psS -> {
-                    psS.setString(1, uuid);
-                    psS.setString(2, entry.getKey().name());
-                    psS.setString(3, entry.getValue());
-                    psS.execute();
-                    return null;
-                });
-            }
-        }
     }
 
     @Override
     public void save(Resume r) {
-        String query = "INSERT INTO resume (uuid, full_name) VALUES (?, ?)";
-        sqlHelper.executePreparedStatement(query, ps -> {
-            ps.setString(1, r.getUuid());
-            ps.setString(2, r.getFullName());
-            ps.execute();
-            return null;
-        });
-        String queryForContacts = "INSERT INTO contact (resume_uuid, type, value) VALUES (?, ?, ?)";
-        for (Map.Entry<ContactType, String> e : r.getContacts().entrySet()) {
-            sqlHelper.executePreparedStatement(queryForContacts, ps -> {
-                ps.setString(1, r.getUuid());
-                ps.setString(2, e.getKey().name());
-                ps.setString(3, e.getValue());
-                ps.execute();
-                return null;
-            });
-        }
+        sqlHelper.transactionalExecute(conn -> {
+                    try (PreparedStatement ps = conn.prepareStatement("INSERT INTO resume (uuid, full_name) VALUES (?,?)")) {
+                        ps.setString(1, r.getUuid());
+                        ps.setString(2, r.getFullName());
+                        ps.execute();
+                    }
+                    try (PreparedStatement ps = conn.prepareStatement("INSERT INTO contact (resume_uuid, type, value) VALUES (?,?,?)")) {
+                        for (Map.Entry<ContactType, String> e : r.getContacts().entrySet()) {
+                            ps.setString(1, r.getUuid());
+                            ps.setString(2, e.getKey().name());
+                            ps.setString(3, e.getValue());
+                            ps.addBatch();
+                        }
+                        ps.executeBatch();
+                    }
+                    return null;
+                }
+        );
     }
 
     @Override
@@ -164,13 +158,13 @@ public class SqlStorage implements Storage {
             ResultSet rs = ps.executeQuery();
             Map<String, Resume> map = new HashMap<>();
             while (rs.next()) {
-                String uuidFromTable = rs.getString("uuid");
+                String uuid = rs.getString("uuid");
                 Resume r;
-                if (map.containsKey(uuidFromTable)) {
-                    r = map.get(uuidFromTable);
-                } else {
-                    r = new Resume((rs.getString("uuid")), (rs.getString("full_name")));
-                    map.put(uuidFromTable, r);
+                if (map.containsKey(uuid)) { // если резюме с данным uuid уже есть в карте, дастаёт его
+                    r = map.get(uuid);
+                } else { // если резюме с данным uuid ещё нет в карте, создаёт его и добавляет в карту
+                    r = new Resume(uuid, rs.getString("full_name"));
+                    map.put(uuid, r);
                 }
                 String type = rs.getString("type");
                 if (type != null) {
