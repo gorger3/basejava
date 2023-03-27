@@ -5,15 +5,11 @@ import com.urise.webapp.model.ContactType;
 import com.urise.webapp.model.Resume;
 import com.urise.webapp.sql.SqlHelper;
 
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class SqlStorage implements Storage {
 
@@ -26,8 +22,7 @@ public class SqlStorage implements Storage {
 
     @Override
     public void clear() {
-        String query = "TRUNCATE resume RESTART IDENTITY CASCADE";
-        sqlHelper.executePreparedStatement(query, PreparedStatement::execute);
+        sqlHelper.executePreparedStatement("TRUNCATE resume RESTART IDENTITY CASCADE", PreparedStatement::execute);
     }
 
     @Override
@@ -41,45 +36,11 @@ public class SqlStorage implements Storage {
                     throw new NotExistStorageException(r);
                 }
             }
-            Map<ContactType, String> contactsFromResume = r.getContacts();
-            if (contactsFromResume.entrySet().size() == 0) { // если у резюме с обновлениями нет контактов, удаляет старые контакты
-                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM contact WHERE resume_uuid = ?")) {
-                    ps.setString(1, uuid);
-                    ps.execute();
-                }
-            } else { // если у резюме с обновлениями есть контакты
-                try (PreparedStatement ps = conn.prepareStatement("SELECT * FROM contact WHERE resume_uuid = ?")) { // достаёт старые контакты из таблицы
-                    List<ContactType> listOfUpdatedContacts = new ArrayList<>();
-                    ps.setString(1, uuid);
-                    ResultSet rs = ps.executeQuery();
-                    while (rs.next()) {
-                        ContactType type = ContactType.valueOf(rs.getString("type"));
-                        if (contactsFromResume.containsKey(type)) { // если контакту в обновлённом резюме есть соответствие в таблице старых контактов
-                            try (PreparedStatement psUpd = conn.prepareStatement("UPDATE contact SET value = ? WHERE type = ? AND resume_uuid = ?")) {
-                                addContactsToPreparedStatement(psUpd, contactsFromResume.get(type), type.name(), uuid);
-                                psUpd.execute();
-
-                            }
-                            listOfUpdatedContacts.add(type);
-                        } else { // удаляет из таблицы контакты, которых нет в обновлённом резюме
-                            try (PreparedStatement psDlt = conn.prepareStatement("DELETE FROM contact WHERE type = ? AND resume_uuid = ?")) {
-                                psDlt.setString(1, type.name());
-                                psDlt.setString(2, uuid);
-                                psDlt.execute();
-                            }
-                        }
-                    }
-                    for (Map.Entry<ContactType, String> e : r.getContacts().entrySet()) { // если в обновлённом резюме есть контакты, которых нет в таблице, заносит их в таблицу
-                        if (listOfUpdatedContacts.contains(e.getKey())) { // если контакт из резюме уже обновлён в таблице с помощью UPDATE,
-                            continue;                                         // начинает новую итерацию
-                        }
-                        try (PreparedStatement psIns = conn.prepareStatement("INSERT INTO contact (value, type, resume_uuid) VALUES (?, ?, ?)")) { // сохраняет новые контакты из резюме
-                            addContactsToPreparedStatement(psIns, e.getValue(), e.getKey().name(), uuid);
-                            psIns.execute();
-                        }
-                    }
-                }
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM contact WHERE resume_uuid = ?")) {
+                ps.setString(1, uuid);
+                ps.execute();
             }
+            insertContacts(r, conn);
             return null;
         });
     }
@@ -87,29 +48,19 @@ public class SqlStorage implements Storage {
     @Override
     public void save(Resume r) {
         sqlHelper.transactionalExecute(conn -> {
-                    try (PreparedStatement ps = conn.prepareStatement("INSERT INTO resume (uuid, full_name) VALUES (?,?)")) {
-                        ps.setString(1, r.getUuid());
-                        ps.setString(2, r.getFullName());
-                        ps.execute();
-                    }
-                    try (PreparedStatement ps = conn.prepareStatement("INSERT INTO contact (value, type, resume_uuid) VALUES (?,?,?)")) {
-                        for (Map.Entry<ContactType, String> e : r.getContacts().entrySet()) {
-                            addContactsToPreparedStatement(ps, e.getValue(), e.getKey().name(), r.getUuid());
-                            ps.addBatch();
-                        }
-                        ps.executeBatch();
-                    }
-                    return null;
-                }
-        );
+            try (PreparedStatement ps = conn.prepareStatement("INSERT INTO resume (uuid, full_name) VALUES (?,?)")) {
+                ps.setString(1, r.getUuid());
+                ps.setString(2, r.getFullName());
+                ps.execute();
+            }
+            insertContacts(r, conn);
+            return null;
+        });
     }
 
     @Override
     public Resume get(String uuid) {
-        String query = "SELECT * FROM resume r " +
-                "LEFT JOIN contact c " +
-                "ON r.uuid = c.resume_uuid " +
-                "WHERE r.uuid = ?";
+        String query = "SELECT * FROM resume r " + "LEFT JOIN contact c " + "ON r.uuid = c.resume_uuid " + "WHERE r.uuid = ?";
         return sqlHelper.executePreparedStatement(query, ps -> {
             ps.setString(1, uuid);
             ResultSet rs = ps.executeQuery();
@@ -141,13 +92,10 @@ public class SqlStorage implements Storage {
     @Override
     public List<Resume> getAllSorted() {
         //language=PostgreSQL
-        String query = "SELECT * FROM resume r " +
-                "LEFT JOIN contact c " +
-                "ON r.uuid = c.resume_uuid " +
-                "ORDER BY r.full_name, r.uuid";
+        String query = "SELECT * FROM resume r " + "LEFT JOIN contact c " + "ON r.uuid = c.resume_uuid " + "ORDER BY r.full_name, r.uuid";
         return sqlHelper.executePreparedStatement(query, ps -> {
             ResultSet rs = ps.executeQuery();
-            Map<String, Resume> map = new HashMap<>();
+            Map<String, Resume> map = new LinkedHashMap<>();
             while (rs.next()) {
                 String uuid = rs.getString("uuid");
                 Resume r;
@@ -159,7 +107,7 @@ public class SqlStorage implements Storage {
                 }
                 addContactsFromResultSetToResume(rs, r);
             }
-            return map.values().stream().sorted().collect(Collectors.toList());
+            return new ArrayList<>(map.values());
         });
     }
 
@@ -189,4 +137,13 @@ public class SqlStorage implements Storage {
         ps.setString(3, uuid);
     }
 
+    private void insertContacts(Resume r, Connection conn) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("INSERT INTO contact (value, type, resume_uuid) VALUES (?, ?, ?)")) {
+            for (Map.Entry<ContactType, String> e : r.getContacts().entrySet()) {
+                addContactsToPreparedStatement(ps, e.getValue(), e.getKey().name(), r.getUuid());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
 }
