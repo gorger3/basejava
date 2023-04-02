@@ -3,8 +3,7 @@ package com.urise.webapp.storage;
 import com.urise.webapp.Config;
 import com.urise.webapp.exception.ExistStorageException;
 import com.urise.webapp.exception.NotExistStorageException;
-import com.urise.webapp.model.ContactType;
-import com.urise.webapp.model.Resume;
+import com.urise.webapp.model.*;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,8 +40,8 @@ public abstract class AbstractStorageTest {
         R1.addContact(ContactType.PHONE, "11111");
         R4.addContact(ContactType.PHONE, "44444");
         R4.addContact(ContactType.SKYPE, "Skype");
-//        R1.addSection(SectionType.OBJECTIVE, new TextSection("Objective1"));
-//        R1.addSection(SectionType.PERSONAL, new TextSection("Personal data"));
+        R1.addSection(SectionType.OBJECTIVE, new TextSection("Objective1"));
+        R1.addSection(SectionType.PERSONAL, new TextSection("Personal data"));
 //        R1.addSection(SectionType.ACHIEVEMENT, new ListSection("Achievement11", "Achievement12", "Achievement13"));
 //        R1.addSection(SectionType.QUALIFICATIONS, new ListSection("Java", "SQL", "JavaScript"));
 //        R1.addSection(SectionType.EXPERIENCE,
