@@ -6,10 +6,8 @@ import com.urise.webapp.model.Resume;
 import com.urise.webapp.sql.SqlHelper;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class SqlStorage implements Storage {
 
@@ -91,23 +89,38 @@ public class SqlStorage implements Storage {
 
     @Override
     public List<Resume> getAllSorted() {
-        //language=PostgreSQL
-        String query = "SELECT * FROM resume r " + "LEFT JOIN contact c " + "ON r.uuid = c.resume_uuid " + "ORDER BY r.full_name, r.uuid";
-        return sqlHelper.executePreparedStatement(query, ps -> {
-            ResultSet rs = ps.executeQuery();
-            Map<String, Resume> map = new LinkedHashMap<>();
-            while (rs.next()) {
-                String uuid = rs.getString("uuid");
-                Resume r;
-                if (map.containsKey(uuid)) { // если резюме с данным uuid уже есть в карте, дастаёт его
-                    r = map.get(uuid);
-                } else { // если резюме с данным uuid ещё нет в карте, создаёт его и добавляет в карту
-                    r = new Resume(uuid, rs.getString("full_name"));
-                    map.put(uuid, r);
-                }
-                addContacts(rs, r);
+        return sqlHelper.transactionalExecute(conn -> {
+            PreparedStatement psForResumes = conn.prepareStatement("SELECT * FROM resume ORDER BY uuid");
+            List<Resume> resumes = new ArrayList<>();
+            ResultSet resumesRS = psForResumes.executeQuery();
+            PreparedStatement psForContacts = conn.prepareStatement("SELECT * FROM contact ORDER BY resume_uuid");
+            ResultSet rsForContacts = psForContacts.executeQuery();
+            while (resumesRS.next()) {
+                Resume r = new Resume(resumesRS.getString("uuid"), resumesRS.getString("full_name"));
+                resumes.add(r);
             }
-            return new ArrayList<>(map.values());
+            Map<String, Map<ContactType, String>> mapResumeContacts = new LinkedHashMap<>();
+            Map<ContactType, String> contacts = new EnumMap<>(ContactType.class);
+            while (rsForContacts.next()) {
+                String uuid = rsForContacts.getString("resume_uuid");
+                ContactType type = ContactType.valueOf(rsForContacts.getString("type"));
+                String value = rsForContacts.getString("value");
+                if (!mapResumeContacts.containsKey(uuid)) {
+                    contacts = new EnumMap<>(ContactType.class);
+                    contacts.put(type, value);
+                } else {
+                    contacts.put(type, value);
+                }
+                mapResumeContacts.put(uuid, contacts);
+            }
+            for (Resume r : resumes) {
+                if (mapResumeContacts.containsKey(r.getUuid())) {
+                    for (Map.Entry<ContactType, String> c : mapResumeContacts.get(r.getUuid()).entrySet()) {
+                        r.addContact(c.getKey(), c.getValue());
+                    }
+                }
+            }
+            return resumes.stream().sorted().collect(Collectors.toList());
         });
     }
 
