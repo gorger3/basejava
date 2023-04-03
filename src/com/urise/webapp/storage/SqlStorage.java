@@ -132,19 +132,9 @@ public class SqlStorage implements Storage {
                 String value = sectionsRS.getString("section_value");
                 if (!mapResumeSections.containsKey(uuid)) {
                     sections = new EnumMap<>(SectionType.class);
-                    switch (type) {
-                        case PERSONAL:
-                        case OBJECTIVE:
-                            sections.put(type, new TextSection(value));
-                            break;
-                    }
+                    fillSections(sections, type, value);
                 } else {
-                    switch (type) {
-                        case PERSONAL:
-                        case OBJECTIVE:
-                            sections.put(type, new TextSection(value));
-                            break;
-                    }
+                    fillSections(sections, type, value);
                 }
                 mapResumeSections.put(uuid, sections);
             }
@@ -175,6 +165,20 @@ public class SqlStorage implements Storage {
         });
     }
 
+    private void fillSections(Map<SectionType, Section> sections, SectionType type, String value) {
+        switch (type) {
+            case PERSONAL:
+            case OBJECTIVE:
+                sections.put(type, new TextSection(value));
+                break;
+            case ACHIEVEMENT:
+            case QUALIFICATIONS:
+                String[] arrFromValue = value.split("\n");
+                sections.put(type, new ListSection(Arrays.asList(arrFromValue)));
+                break;
+        }
+    }
+
     private void addContacts(ResultSet rs, Resume r) throws SQLException {
         String type = rs.getString("type");
         if (type != null) {
@@ -194,6 +198,11 @@ public class SqlStorage implements Storage {
                 case OBJECTIVE:
                     r.addSection(sectionType, new TextSection(value));
                     break;
+                case ACHIEVEMENT:
+                case QUALIFICATIONS:
+                    String[] arrFromValue = value.split("\n");
+                    r.addSection(sectionType, new ListSection(Arrays.asList(arrFromValue)));
+                    break;
             }
         }
     }
@@ -210,7 +219,19 @@ public class SqlStorage implements Storage {
         }
         try (PreparedStatement ps = conn.prepareStatement("INSERT INTO section (section_value, section_type, resume_uuid) VALUES (?, ?, ?)")) {
             for (Map.Entry<SectionType, Section> e : r.getSections().entrySet()) {
-                ps.setString(1, e.getValue().toString());
+                SectionType type = e.getKey();
+                switch (type) {
+                    case PERSONAL:
+                    case OBJECTIVE:
+                        ps.setString(1, e.getValue().toString());
+                        break;
+                    case ACHIEVEMENT:
+                    case QUALIFICATIONS:
+                        ListSection listSection = (ListSection) e.getValue();
+                        String delim = "\n";
+                        ps.setString(1, String.join(delim, listSection.getItems()));
+                        break;
+                }
                 ps.setString(2, e.getKey().name());
                 ps.setString(3, r.getUuid());
                 ps.addBatch();
