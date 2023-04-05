@@ -12,6 +12,9 @@ public class Config {
     protected static final File PROPS = new File("config\\resumes.properties");
     private static final Config INSTANCE = new Config();
 
+    private String dbUrl;
+    private String dbUser;
+    private String dbPassword;
     private final File storageDir;
 
     private final Storage storage;
@@ -21,6 +24,9 @@ public class Config {
             Properties props = new Properties();
             props.load(fis);
             storageDir = new File(props.getProperty("storage.dir"));
+            dbUrl = props.getProperty("db.url");
+            dbUser = props.getProperty("db.user");
+            dbPassword = props.getProperty("db.password");
             storage = new SqlStorage(
                     props.getProperty("db.url"),
                     props.getProperty("db.user"),
@@ -28,7 +34,6 @@ public class Config {
         } catch (IOException e) {
             throw new IllegalStateException("Invalid resumes.properties" + PROPS.getAbsolutePath());
         }
-
     }
 
     public static Config get() {
@@ -43,4 +48,15 @@ public class Config {
         return storage;
     }
 
+    public String getDbUrl() {
+        return dbUrl;
+    }
+
+    public String getDbUser() {
+        return dbUser;
+    }
+
+    public String getDbPassword() {
+        return dbPassword;
+    }
 }
