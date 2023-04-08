@@ -1,6 +1,8 @@
 package com.urise.webapp.web;
 
 import com.urise.webapp.Config;
+import com.urise.webapp.model.Resume;
+import com.urise.webapp.storage.Storage;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -8,21 +10,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.*;
 
 public class ResumeServlet extends HttpServlet {
-    //    private final Storage storage = Config.get().getStorage();
+    private Storage storage;
     final String DRIVER = "org.postgresql.Driver";
-    Connection conn = null;
 
-    //    private final SqlHelper sqlHelper = new SqlHelper(() -> DriverManager.getConnection(dbUrl, dbUser, dbPassword));
     @Override
     public void init() throws ServletException {
         try {
             Class.forName(DRIVER);
-            conn = DriverManager.getConnection(Config.get().getDbUrl(), Config.get().getDbUser(), Config.get().getDbPassword());
-
-        } catch (ClassNotFoundException | SQLException e) {
+            storage = Config.get().getStorage();
+        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
 
@@ -39,19 +37,9 @@ public class ResumeServlet extends HttpServlet {
         out.println("<html><body>");
         out.println("<h3>Список резюме</h3>");
         out.println("<table border=1><tr>" + "<tr><th>UUID</th>" + "<th>Full Name</th></tr>");
-
-
-        try (PreparedStatement psForResumes = conn.prepareStatement("SELECT * FROM resume ORDER BY full_name, uuid")) {
-            ResultSet resumesRS = psForResumes.executeQuery();
-            while (resumesRS.next()) {
-                String uuid = resumesRS.getString("uuid");
-                String fullName = resumesRS.getString("full_name");
-                out.println("<tr>" + "<td>" + uuid + "</td>" + "<td>" + fullName + "</td></tr>");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        for (Resume r : storage.getAllSorted()) {
+            out.println("<tr>" + "<td>" + r.getUuid() + "</td>" + "<td>" + r.getFullName() + "</td></tr>");
         }
-
         out.println("</table></body></html>");
     }
 
@@ -60,11 +48,5 @@ public class ResumeServlet extends HttpServlet {
     }
 
     public void destroy() {
-        // Close connection object.
-        try {
-            conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
 }
