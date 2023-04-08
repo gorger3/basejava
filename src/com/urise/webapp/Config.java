@@ -9,12 +9,12 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class Config {
-    protected static final File PROPS = new File("config\\resumes.properties");
+    protected static final File PROPS = new File("C:\\Users\\GGorelik\\Documents\\java-study\\javaops\\basejava\\config\\resumes.properties");
     private static final Config INSTANCE = new Config();
 
-    private String dbUrl;
-    private String dbUser;
-    private String dbPassword;
+    private final String dbUrl;
+    private final String dbUser;
+    private final String dbPassword;
     private final File storageDir;
 
     private final Storage storage;

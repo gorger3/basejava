@@ -6,7 +6,6 @@ import com.urise.webapp.sql.SqlHelper;
 
 import java.sql.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class SqlStorage implements Storage {
 
@@ -41,7 +40,8 @@ public class SqlStorage implements Storage {
                 ps.setString(1, uuid);
                 ps.execute();
             }
-            insertData(r, conn);
+            insertContacts(r, conn);
+            insertSections(r, conn);
             return null;
         });
     }
@@ -54,7 +54,8 @@ public class SqlStorage implements Storage {
                 ps.setString(2, r.getFullName());
                 ps.execute();
             }
-            insertData(r, conn);
+            insertContacts(r, conn);
+            insertSections(r, conn);
             return null;
         });
     }
@@ -150,7 +151,7 @@ public class SqlStorage implements Storage {
                     }
                 }
             }
-            return resumes.values().stream().collect(Collectors.toList());
+            return new ArrayList<>(resumes.values());
         });
     }
 
@@ -207,7 +208,7 @@ public class SqlStorage implements Storage {
         }
     }
 
-    private void insertData(Resume r, Connection conn) throws SQLException {
+    private void insertContacts(Resume r, Connection conn) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement("INSERT INTO contact (value, type, resume_uuid) VALUES (?, ?, ?)")) {
             for (Map.Entry<ContactType, String> e : r.getContacts().entrySet()) {
                 ps.setString(1, e.getValue());
@@ -217,6 +218,8 @@ public class SqlStorage implements Storage {
             }
             ps.executeBatch();
         }
+    }
+    private void insertSections(Resume r, Connection conn) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement("INSERT INTO section (section_value, section_type, resume_uuid) VALUES (?, ?, ?)")) {
             for (Map.Entry<SectionType, Section> e : r.getSections().entrySet()) {
                 SectionType type = e.getKey();

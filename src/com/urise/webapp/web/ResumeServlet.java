@@ -1,6 +1,6 @@
 package com.urise.webapp.web;
 
-import com.urise.webapp.model.Resume;
+import com.urise.webapp.Config;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -9,15 +9,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class ResumeServlet extends HttpServlet {
     //    private final Storage storage = Config.get().getStorage();
-    private String dbUrl = "jdbc:postgresql://localhost:5432/resumes";
-    private String dbUser = "postgres";
-    private String dbPassword = "postgres";
-
     final String DRIVER = "org.postgresql.Driver";
     Connection conn = null;
 
@@ -26,24 +20,8 @@ public class ResumeServlet extends HttpServlet {
     public void init() throws ServletException {
         try {
             Class.forName(DRIVER);
-//            conn = DriverManager.getConnection(Config.get().getDbUrl(), Config.get().getDbUser(), Config.get().getDbPassword());
+            conn = DriverManager.getConnection(Config.get().getDbUrl(), Config.get().getDbUser(), Config.get().getDbPassword());
 
-            conn = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-            /*
-            Почему-то через Config не работает:
-
-            Выбрасывает такое исключение:
-            javax.servlet.ServletException: Servlet.init() для сервлета [resumeServlet] выбросил исключение
-            ...
-            java.lang.ExceptionInInitializerError
-	            com.urise.webapp.web.ResumeServlet.init(ResumeServlet.java:30)
-	            ...
-            java.lang.IllegalStateException: Invalid resumes.propertiesC:\Users\GGorelik\java\apache-tomcat-9.0.73\bin\config\resumes.properties
-	            com.urise.webapp.Config.<init>(Config.java:35)
-	            com.urise.webapp.Config.<clinit>(Config.java:13)
-	            com.urise.webapp.web.ResumeServlet.init(ResumeServlet.java:30)
-	            ...
-            **/
         } catch (ClassNotFoundException | SQLException e) {
             throw new RuntimeException(e);
         }
@@ -64,7 +42,6 @@ public class ResumeServlet extends HttpServlet {
 
 
         try (PreparedStatement psForResumes = conn.prepareStatement("SELECT * FROM resume ORDER BY full_name, uuid")) {
-            Map<String, Resume> resumes = new LinkedHashMap<>();
             ResultSet resumesRS = psForResumes.executeQuery();
             while (resumesRS.next()) {
                 String uuid = resumesRS.getString("uuid");
