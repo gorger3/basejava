@@ -12,9 +12,6 @@ public class Config {
     protected static final File PROPS = new File("C:\\Users\\GGorelik\\Documents\\java-study\\javaops\\basejava\\config\\resumes.properties");
     private static final Config INSTANCE = new Config();
 
-    private final String dbUrl;
-    private final String dbUser;
-    private final String dbPassword;
     private final File storageDir;
 
     private final Storage storage;
@@ -24,9 +21,6 @@ public class Config {
             Properties props = new Properties();
             props.load(fis);
             storageDir = new File(props.getProperty("storage.dir"));
-            dbUrl = props.getProperty("db.url");
-            dbUser = props.getProperty("db.user");
-            dbPassword = props.getProperty("db.password");
             storage = new SqlStorage(
                     props.getProperty("db.url"),
                     props.getProperty("db.user"),
@@ -48,15 +42,4 @@ public class Config {
         return storage;
     }
 
-    public String getDbUrl() {
-        return dbUrl;
-    }
-
-    public String getDbUser() {
-        return dbUser;
-    }
-
-    public String getDbPassword() {
-        return dbPassword;
-    }
 }

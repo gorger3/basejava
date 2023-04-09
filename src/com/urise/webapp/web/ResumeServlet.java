@@ -13,17 +13,10 @@ import java.io.PrintWriter;
 
 public class ResumeServlet extends HttpServlet {
     private Storage storage;
-    final String DRIVER = "org.postgresql.Driver";
 
     @Override
     public void init() throws ServletException {
-        try {
-            Class.forName(DRIVER);
-            storage = Config.get().getStorage();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-
+        storage = Config.get().getStorage();
     }
 
     @Override

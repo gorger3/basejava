@@ -9,10 +9,15 @@ import java.util.*;
 
 public class SqlStorage implements Storage {
 
+    final String DRIVER = "org.postgresql.Driver";
     private final SqlHelper sqlHelper;
 
-
     public SqlStorage(String dbUrl, String dbUser, String dbPassword) {
+        try {
+            Class.forName(DRIVER);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         sqlHelper = new SqlHelper(() -> DriverManager.getConnection(dbUrl, dbUser, dbPassword));
     }
 
