@@ -17,7 +17,7 @@ public class SqlStorage implements Storage {
         try {
             Class.forName(DRIVER);
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
         sqlHelper = new SqlHelper(() -> DriverManager.getConnection(dbUrl, dbUser, dbPassword));
     }

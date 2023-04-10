@@ -20,8 +20,10 @@
             for (Resume resume : (List<Resume>) request.getAttribute("resumes")) {
         %>
         <tr>
-            <td><a href="resume?uuid=<%=resume.getUuid()%>"><%=resume.getFullName()%></a></td>
-            <td><%=resume.getContact(ContactType.MAIL)%></td>
+            <td><a href="resume?uuid=<%=resume.getUuid()%>"><%=resume.getFullName()%>
+            </a></td>
+            <td><%=resume.getContact(ContactType.MAIL)%>
+            </td>
         </tr>
         <%}%>
     </table>
