@@ -1,8 +1,7 @@
 package com.urise.webapp.web;
 
 import com.urise.webapp.Config;
-import com.urise.webapp.model.ContactType;
-import com.urise.webapp.model.Resume;
+import com.urise.webapp.model.*;
 import com.urise.webapp.storage.Storage;
 
 import javax.servlet.ServletException;
@@ -32,6 +31,25 @@ public class ResumeServlet extends HttpServlet {
                 r.addContact(type, value);
             } else {
                 r.getContacts().remove(type);
+            }
+        }
+        for (SectionType type : SectionType.values()) {
+            String value = request.getParameter(type.name());
+            if (value != null && value.trim().length() != 0) {
+                switch (type) {
+                    case PERSONAL:
+                    case OBJECTIVE:
+                        TextSection text = new TextSection(value);
+                        r.addSection(type, text);
+                    case ACHIEVEMENT:
+                    case QUALIFICATIONS:
+                        String delim = "\n";
+                        String[] items = value.split(delim);
+                        ListSection list = new ListSection(items);
+                        r.addSection(type, list);
+                }
+            } else {
+                r.getSections().remove(type);
             }
         }
         storage.update(r);
@@ -67,3 +85,48 @@ public class ResumeServlet extends HttpServlet {
     public void destroy() {
     }
 }
+
+//for (SectionType type : SectionType.values()) {
+//        String[] values = request.getParameterValues(type.name());
+//        if (value != null && value.trim().length() != 0) {
+//        switch (type) { // <input type=\"text\" name=" + type.getTitle() + " size=\"50\" value=\"" + text + "\">
+//        case PERSONAL:
+//        case OBJECTIVE:
+//        TextSection text = new TextSection(value);
+//        r.addSection(type, text);
+//        case ACHIEVEMENT:
+//        case QUALIFICATIONS:
+//        String delim = "\n";
+//        String[] items = value.split(delim);
+//        ListSection list = new ListSection(items);
+//        r.addSection(type, list);
+//        }
+//        } else {
+//        r.getSections().remove(type);
+//        }
+//        }
+
+//    String[] values = request.getParameterValues("section");
+//    SectionType[] sectionTypes = SectionType.values();
+//        if (values != null) {
+//                int i =0;
+//                for (String value : values) {
+//                if (value != null && value.trim().length() != 0) {
+//                switch (i) { // <input type=\"text\" name=" + type.getTitle() + " size=\"50\" value=\"" + text + "\">
+//                case 0:
+//                case 1:
+//                TextSection textSection = new TextSection(values[i]);
+//                r.addSection(sectionTypes[i], textSection);
+//                case 2:
+//                case 3:
+//                String delim = "\n";
+//                String[] items = value.split(delim);
+//                ListSection list = new ListSection(items);
+//                r.addSection(sectionTypes[i], list);
+//                }
+//                } else {
+//                r.getSections().remove(sectionTypes[i]);
+//                }
+//                i++;
+//                }
+//                }

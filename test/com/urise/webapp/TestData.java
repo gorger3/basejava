@@ -26,9 +26,9 @@ public class TestData {
         R1.addContact(ContactType.PHONE, "11111");
         R4.addContact(ContactType.PHONE, "44444");
         R4.addContact(ContactType.SKYPE, "Skype");
-        R1.addSection(SectionType.OBJECTIVE, new TextSection("Objective1"));
-        R1.addSection(SectionType.PERSONAL, new TextSection("Personal data"));
-        R1.addSection(SectionType.ACHIEVEMENT, new ListSection("Achievement11", "Achievement12", "Achievement13"));
+        R1.addSection(SectionType.OBJECTIVE, new TextSection("Objective1-1"));
+        R1.addSection(SectionType.PERSONAL, new TextSection("Personal data1-1"));
+        R1.addSection(SectionType.ACHIEVEMENT, new ListSection("Achievement1-1", "Achievement1-2", "Achievement1-3"));
         R1.addSection(SectionType.QUALIFICATIONS, new ListSection("Java", "SQL", "JavaScript"));
         R1.addSection(SectionType.EXPERIENCE,
                 new OrganizationSection(

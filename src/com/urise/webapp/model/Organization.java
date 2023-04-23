@@ -60,7 +60,11 @@ public class Organization implements Serializable {
 
     @Override
     public String toString() {
-        return "Organization(" + homePage + "," + positions + ')';
+        StringBuilder text = new StringBuilder("");
+        for (Position item : positions) {
+            text.append(item + "\n");
+        }
+        return homePage + "\n" + text;
     }
 
     /**
@@ -131,7 +135,7 @@ public class Organization implements Serializable {
 
         @Override
         public String toString() {
-            return "Position(" + startDate + ',' + endDate + ',' + title + ',' + description + ')';
+            return startDate + ", " + endDate + ", " + title + ", " + description;
         }
     }
 }

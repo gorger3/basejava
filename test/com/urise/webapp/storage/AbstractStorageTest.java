@@ -49,7 +49,7 @@ public abstract class AbstractStorageTest {
         Resume newResume = new Resume(UUID_1, "New Name");
         R1.addContact(ContactType.MAIL, "mail1@google.com");
         R1.addContact(ContactType.SKYPE, "NewSkype");
-        R1.addContact(ContactType.HOMEPAGE, "homepage1");
+        R1.addContact(ContactType.HOME_PAGE, "homepage1");
         storage.update(newResume);
         assertTrue(newResume.equals(storage.get(UUID_1)));
     }

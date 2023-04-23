@@ -19,11 +19,11 @@ public class Link implements Serializable {
     public Link() {
     }
 
-        public Link(String name, String url) {
-            Objects.requireNonNull(name, "name must not be null");
-            this.name = name;
-            this.url = url == null ? "" : url;
-        }
+    public Link(String name, String url) {
+        Objects.requireNonNull(name, "name must not be null");
+        this.name = name;
+        this.url = url == null ? "" : url;
+    }
 
     public String getName() {
         return name;
@@ -35,7 +35,7 @@ public class Link implements Serializable {
 
     @Override
     public String toString() {
-        return "Link(" + name + ',' + url + ')';
+        return name + ", " + url;
     }
 
     @Override

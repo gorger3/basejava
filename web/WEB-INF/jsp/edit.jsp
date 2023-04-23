@@ -1,6 +1,8 @@
 <%@ page import="com.urise.webapp.model.Resume" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.urise.webapp.model.ContactType" %>
+<%@ page import="com.urise.webapp.model.SectionType" %>
+<%@ page import="com.urise.webapp.model.TextSection" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
@@ -9,6 +11,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <link rel="stylesheet" href="css/style.css">
     <jsp:useBean id="resume" type="com.urise.webapp.model.Resume" scope="request"/>
+
     <title>Резюме ${resume.fullName}</title>
 </head>
 <body>
@@ -22,22 +25,29 @@
         </dl>
         <h3>Контакты</h3>
         <p>
-            <c:forEach items="${ContactType.values()}" var="type">
-                <jsp:useBean id="type" type="com.urise.webapp.model.ContactType"/>
+            <c:forEach var="contactType" items="${ContactType.values()}">
+                <jsp:useBean id="contactType" type="com.urise.webapp.model.ContactType"/>
         <dl>
-            <dt>${type.type}</dt>
-            <dd><input type="text" name="${type.name()}" size="30" value="${resume.getContact(type)}"></dd>
+            <dt>${contactType.title}</dt>
+            <dd><input type="text" name="${contactType.name()}" size="30" value="${resume.getContact(contactType)}">
+            </dd>
         </dl>
         </c:forEach>
         </p>
         <h3>Секции</h3>
-        <input type="text" name="section" size="30" value="1"><br>
-        <input type="text" name="section" size="30" value="1"><br>
-        <input type="text" name="section" size="30" value="1"><br>
+        <jsp:useBean id="HtmlHelper" class="com.urise.webapp.util.HtmlHelper"/>
+        <c:forEach var="sectionType" items="${SectionType.values()}">
+            <jsp:useBean id="sectionType" type="com.urise.webapp.model.SectionType"/>
+<%--            <c:set var="section" value="${resume.getSection(sectionType)}" />--%>
+            <dl>
+                <dt>${sectionType.title}</dt>
+                <dd>${HtmlHelper.htmlToSectionContent(sectionType, resume)}</dd>
+            </dl>
+        </c:forEach>
         <hr>
         <button type="submit">Сохранить</button>
-        <button onclick="window.history.back()">Отменить</button>
     </form>
+    <button onclick="window.history.back()">Отменить</button>
 </section>
 <jsp:include page="fragments/footer.jsp"></jsp:include>
 </body>
